@@ -102,7 +102,7 @@ export default function CheckoutPage() {
 
       if (!res.ok) throw new Error('Failed to create order')
 
-      const order = await res.json()
+      await res.json()
       clearCart()
       setSubmitted(true)
       addToast(tr('successToast'), 'success')

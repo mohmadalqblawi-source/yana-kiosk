@@ -11,6 +11,8 @@ const inlineTranslations = {
   allProducts: { de: 'Alle Produkte', en: 'All Products', fa: 'همه محصولات', ar: 'جميع المنتجات' },
   food: { de: 'Lebensmittel', en: 'Food', fa: 'غذا', ar: 'طعام' },
   drinks: { de: 'Getränke', en: 'Drinks', fa: 'نوشیدنی', ar: 'مشروبات' },
+  legal: { de: 'Rechtliches', en: 'Legal', fa: 'حقوقی', ar: 'قانوني' },
+  impressum: { de: 'Impressum', en: 'Impressum', fa: 'اطلاعات حقوقی', ar: 'الإفادة القانونية' },
   contact: { de: 'Kontakt', en: 'Contact', fa: 'تماس', ar: 'اتصل بنا' },
   hours: { de: 'Öffnungszeiten', en: 'Hours', fa: 'ساعات کار', ar: 'ساعات العمل' },
   hoursWeek: { de: 'Mo - Sa: 7:00 - 22:00', en: 'Mon - Sat: 7:00 - 22:00', fa: 'شنبه - پنج‌شنبه: ۷:۰۰ - ۲۲:۰۰', ar: 'السبت - الخميس: ٧:٠٠ - ٢٢:٠٠' },
@@ -30,7 +32,7 @@ export default function Footer() {
   return (
     <footer className="bg-gray-900 text-gray-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-8">
           {/* Brand */}
           <div className="md:col-span-1">
             <Link href="/" className="flex items-center gap-2 mb-4">
@@ -72,6 +74,18 @@ export default function Footer() {
             </ul>
           </div>
 
+          {/* Legal */}
+          <div>
+            <h3 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">{t('legal')}</h3>
+            <ul className="space-y-2">
+              <li>
+                <Link href="/impressum" className="text-sm text-gray-400 hover:text-yellow-500 transition-colors">
+                  {t('impressum')}
+                </Link>
+              </li>
+            </ul>
+          </div>
+
           {/* Contact */}
           <div>
             <h3 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">{t('contact')}</h3>
@@ -82,11 +96,11 @@ export default function Footer() {
               </li>
               <li className="flex items-center gap-2">
                 <Phone className="w-4 h-4 shrink-0 text-yellow-500" />
-                <span className="text-sm text-gray-400">+49 40 123456789</span>
+                <span className="text-sm text-gray-400">01604873902</span>
               </li>
               <li className="flex items-center gap-2">
                 <Mail className="w-4 h-4 shrink-0 text-yellow-500" />
-                <span className="text-sm text-gray-400">info@yanakiosk.de</span>
+                <span className="text-sm text-gray-400">yana-kiosk@web.de</span>
               </li>
             </ul>
           </div>

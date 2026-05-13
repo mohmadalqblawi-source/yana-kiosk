@@ -3,10 +3,13 @@
 import { useLanguageStore } from '@/store/language'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Phone, Mail, MapPin, Scale } from 'lucide-react'
+import { ArrowLeft, Phone, Mail, MapPin, Scale, ShieldCheck } from 'lucide-react'
 
 const inlineTranslations = {
   backToHome: { de: 'Zurück zur Startseite', en: 'Back to Home', fa: 'بازگشت به خانه', ar: 'العودة إلى الرئيسية' },
+  disputeResolution: { de: 'Streitbeilegung', en: 'Dispute Resolution', fa: 'حل اختلاف', ar: 'حل النزاعات' },
+  disputeText: { de: 'Wir sind zur Teilnahme an einem Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle weder verpflichtet noch bereit.', en: 'We are neither obliged nor willing to participate in dispute resolution proceedings before a consumer arbitration board.', fa: 'ما نه ملزم هستیم و نه مایل به شرکت در فرآیند حل اختلاف در برابر هیئت داوری مصرف‌کنندگان.', ar: 'نحن لسنا ملزمين ولا راغبين في المشاركة في إجراءات تسوية المنازعات أمام هيئة التحكيم الاستهلاكية.' },
+  statusLabel: { de: 'Stand:', en: 'As of:', fa: 'تاریخ:', ar: 'تاريخ:' },
 }
 
 export default function ImpressumPage() {
@@ -88,6 +91,20 @@ export default function ImpressumPage() {
                   </a>
                 </div>
               </div>
+            </div>
+
+            {/* Dispute Resolution */}
+            <div className="bg-white rounded-2xl border border-gray-200 p-6 sm:p-8 shadow-sm">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <ShieldCheck className="w-5 h-5 text-green-600" />
+                {t('disputeResolution')}
+              </h2>
+              <p className="text-sm text-gray-600 leading-relaxed">
+                {t('disputeText')}
+              </p>
+              <p className="mt-4 text-xs text-gray-400">
+                {t('statusLabel')} 13.05.2026
+              </p>
             </div>
 
             {/* Source */}

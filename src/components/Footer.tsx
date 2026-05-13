@@ -13,6 +13,7 @@ const inlineTranslations = {
   drinks: { de: 'Getränke', en: 'Drinks', fa: 'نوشیدنی', ar: 'مشروبات' },
   legal: { de: 'Rechtliches', en: 'Legal', fa: 'حقوقی', ar: 'قانوني' },
   impressum: { de: 'Impressum', en: 'Impressum', fa: 'اطلاعات حقوقی', ar: 'الإفادة القانونية' },
+  agb: { de: 'AGB', en: 'Terms & Conditions', fa: 'شرایط و ضوابط', ar: 'الشروط والأحكام' },
   contact: { de: 'Kontakt', en: 'Contact', fa: 'تماس', ar: 'اتصل بنا' },
   hours: { de: 'Öffnungszeiten', en: 'Hours', fa: 'ساعات کار', ar: 'ساعات العمل' },
   hoursWeek: { de: 'Mo - Sa: 7:00 - 22:00', en: 'Mon - Sat: 7:00 - 22:00', fa: 'شنبه - پنج‌شنبه: ۷:۰۰ - ۲۲:۰۰', ar: 'السبت - الخميس: ٧:٠٠ - ٢٢:٠٠' },
@@ -81,6 +82,11 @@ export default function Footer() {
               <li>
                 <Link href="/impressum" className="text-sm text-gray-400 hover:text-yellow-500 transition-colors">
                   {t('impressum')}
+                </Link>
+              </li>
+              <li>
+                <Link href="/agb" className="text-sm text-gray-400 hover:text-yellow-500 transition-colors">
+                  {t('agb')}
                 </Link>
               </li>
             </ul>

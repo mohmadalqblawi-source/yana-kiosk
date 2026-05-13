@@ -111,6 +111,7 @@ export const translations = {
     legal: { de: 'Rechtliches', en: 'Legal', fa: 'حقوقی', ar: 'قانوني' },
     impressum: { de: 'Impressum', en: 'Impressum', fa: 'اطلاعات حقوقی', ar: 'الإفادة القانونية' },
     agb: { de: 'AGB', en: 'Terms & Conditions', fa: 'شرایط و ضوابط', ar: 'الشروط والأحكام' },
+    widerruf: { de: 'Widerrufsbelehrung', en: 'Right of Withdrawal', fa: 'حق انصراف', ar: 'حق الإلغاء' },
     contact: { de: 'Kontakt', en: 'Contact', fa: 'تماس', ar: 'اتصل بنا' },
     hours: { de: 'Öffnungszeiten', en: 'Hours', fa: 'ساعات کار', ar: 'ساعات العمل' },
     hoursWeek: { de: 'Mo - Sa: 7:00 - 22:00', en: 'Mon - Sat: 7:00 - 22:00', fa: 'شنبه - پنج‌شنبه: ۷:۰۰ - ۲۲:۰۰', ar: 'السبت - الخميس: ٧:٠٠ - ٢٢:٠٠' },
@@ -145,6 +146,11 @@ export const translations = {
       dispute: { de: '10. Alternative Streitbeilegung', en: '10. Alternative Dispute Resolution', fa: '۱۰. حل اختلاف جایگزین', ar: '١٠. تسوية المنازعات البديلة' },
     },
     downloadPdf: { de: 'AGB als PDF herunterladen (PDF)', en: 'Download T&C as PDF', fa: 'دانلود شرایط و ضوابط (PDF)', ar: 'تحميل الشروط والأحكام (PDF)' },
+  },
+  widerruf: {
+    title: { de: 'Widerrufsbelehrung & Widerrufsformular', en: 'Right of Withdrawal & Cancellation Form', fa: 'حق انصراف و فرم انصراف', ar: 'حق الإلغاء ونموذج الإلغاء' },
+    subtitle: { de: 'Belehrung für Verbraucher', en: 'Information for Consumers', fa: 'اطلاعات برای مصرف‌کنندگان', ar: 'معلومات للمستهلكين' },
+    downloadPdf: { de: 'Widerrufsbelehrung als PDF (PDF)', en: 'Download Withdrawal Policy as PDF', fa: 'دانلود حق انصراف (PDF)', ar: 'تحميل سياسة الإلغاء (PDF)' },
   },
   productCard: {
     addedToast: { de: 'wurde hinzugefügt', en: 'was added', fa: 'اضافه شد', ar: 'تمت الإضافة' },

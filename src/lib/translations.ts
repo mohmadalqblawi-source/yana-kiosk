@@ -112,6 +112,7 @@ export const translations = {
     impressum: { de: 'Impressum', en: 'Impressum', fa: 'اطلاعات حقوقی', ar: 'الإفادة القانونية' },
     agb: { de: 'AGB', en: 'Terms & Conditions', fa: 'شرایط و ضوابط', ar: 'الشروط والأحكام' },
     widerruf: { de: 'Widerrufsbelehrung', en: 'Right of Withdrawal', fa: 'حق انصراف', ar: 'حق الإلغاء' },
+    datenschutz: { de: 'Datenschutz', en: 'Privacy Policy', fa: 'حریم خصوصی', ar: 'سياسة الخصوصية' },
     contact: { de: 'Kontakt', en: 'Contact', fa: 'تماس', ar: 'اتصل بنا' },
     hours: { de: 'Öffnungszeiten', en: 'Hours', fa: 'ساعات کار', ar: 'ساعات العمل' },
     hoursWeek: { de: 'Mo - Sa: 7:00 - 22:00', en: 'Mon - Sat: 7:00 - 22:00', fa: 'شنبه - پنج‌شنبه: ۷:۰۰ - ۲۲:۰۰', ar: 'السبت - الخميس: ٧:٠٠ - ٢٢:٠٠' },
@@ -151,6 +152,11 @@ export const translations = {
     title: { de: 'Widerrufsbelehrung & Widerrufsformular', en: 'Right of Withdrawal & Cancellation Form', fa: 'حق انصراف و فرم انصراف', ar: 'حق الإلغاء ونموذج الإلغاء' },
     subtitle: { de: 'Belehrung für Verbraucher', en: 'Information for Consumers', fa: 'اطلاعات برای مصرف‌کنندگان', ar: 'معلومات للمستهلكين' },
     downloadPdf: { de: 'Widerrufsbelehrung als PDF (PDF)', en: 'Download Withdrawal Policy as PDF', fa: 'دانلود حق انصراف (PDF)', ar: 'تحميل سياسة الإلغاء (PDF)' },
+  },
+  datenschutz: {
+    title: { de: 'Datenschutzerklärung', en: 'Privacy Policy', fa: 'حریم خصوصی', ar: 'سياسة الخصوصية' },
+    subtitle: { de: 'Informationen zum Datenschutz gemäß DSGVO', en: 'Privacy information according to GDPR', fa: 'اطلاعات حریم خصوصی طبق GDPR', ar: 'معلومات الخصوصية وفقاً للـ GDPR' },
+    downloadPdf: { de: 'Datenschutzerklärung als PDF (PDF)', en: 'Download Privacy Policy as PDF', fa: 'دانلود حریم خصوصی (PDF)', ar: 'تحميل سياسة الخصوصية (PDF)' },
   },
   productCard: {
     addedToast: { de: 'wurde hinzugefügt', en: 'was added', fa: 'اضافه شد', ar: 'تمت الإضافة' },

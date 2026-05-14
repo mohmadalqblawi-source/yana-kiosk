@@ -514,7 +514,12 @@ function CheckoutFormContent({
         redirect: 'if_required',
         confirmParams: {
           return_url: window.location.origin + '/checkout',
-          payment_method_data: { billing_details: { name: formData.customerName, email: formData.customerEmail, phone: formData.customerPhone || undefined } },
+          payment_method_data: {
+            billing_details: {
+              name: formData.customerName,
+              email: formData.customerEmail,
+            },
+          },
         },
       })
       if (confirmError) { addToast(confirmError.message || tr('errorToast'), 'error'); setSubmitting(false); return }
@@ -532,7 +537,7 @@ function CheckoutFormContent({
     <form onSubmit={handleSubmit}>
       <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 mb-4">
         {stripe && elements ? (
-          <PaymentElement options={{ layout: 'tabs', fields: { billingDetails: { name: 'never', email: 'never', phone: 'never' } } }} />
+          <PaymentElement options={{ layout: 'tabs', fields: { billingDetails: { name: 'never', email: 'never' } } }} />
         ) : (
           <div className="flex items-center justify-center py-8 text-sm text-gray-500">
             <Loader2 className="w-5 h-5 animate-spin mr-2" />

@@ -11,7 +11,8 @@ import { useLanguageStore } from '@/store/language'
 import { formatPrice, calculateVAT } from '@/lib/utils'
 import { ArrowLeft, Check, CreditCard, ShoppingBag, Loader2, Truck, Lock } from 'lucide-react'
 
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
+const stripeKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+const stripePromise = stripeKey ? loadStripe(stripeKey) : null
 
 const inlineTranslations = {
   backToCart: { de: 'Zurück zum Warenkorb', en: 'Back to Cart', fa: 'بازگشت به سبد خرید', ar: 'العودة إلى سلة التسوق' },

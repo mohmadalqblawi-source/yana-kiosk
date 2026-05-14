@@ -7,7 +7,7 @@ import { Product } from '@/types'
 import ProductGrid from '@/components/ProductGrid'
 import { ProductCardSkeleton } from '@/components/SkeletonLoader'
 import { useLanguageStore } from '@/store/language'
-import { Search, X, UtensilsCrossed, Wine, Cigarette, Pill, Store } from 'lucide-react'
+import { Search, X, UtensilsCrossed, Wine, Cigarette, Pill, Store, Snowflake } from 'lucide-react'
 
 const inlineTranslations = {
   title: { de: 'Shop', en: 'Shop', fa: 'فروشگاه', ar: 'المتجر' },
@@ -21,16 +21,19 @@ const inlineTranslations = {
   emptyShopTitle: { de: 'Der Shop wird bald er\u00f6ffnet!', en: 'The shop will open soon!', fa: 'فروشگاه به زودی افتتاح می\u200cشود!', ar: 'المتجر سيفتتح قريباً!' },
   emptyShopDesc: { de: 'Unser Sortiment ist in K\u00fcrze verf\u00fcgbar. Schau bald wieder vorbei!', en: 'Our range will be available soon. Check back soon!', fa: 'مجموعه ما به زودی در دسترس خواهد بود. به زودی دوباره سر بزنید!', ar: 'مجموعتنا ستكون متاحة قريباً. تفضل بزيارتنا قريباً!' },
   mainLabels: {
-    essen: { de: 'Essen', en: 'Food', fa: 'غذا', ar: 'طعام' },
-    trinken: { de: 'Trinken', en: 'Drinks', fa: 'نوشیدنی', ar: 'مشروبات' },
+    lebensmittel: { de: 'Lebensmittel', en: 'Food', fa: 'مواد غذایی', ar: 'مواد غذائية' },
+    getraenke: { de: 'Getränke', en: 'Drinks', fa: 'نوشیدنی', ar: 'مشروبات' },
     rauchen: { de: 'Rauchen', en: 'Smoking', fa: 'سیگار', ar: 'تدخين' },
     drogerie: { de: 'Drogerie', en: 'Drugstore', fa: 'دراگ\u200cاستور', ar: 'عناية شخصية' },
+    shisha: { de: 'Shisha', en: 'Shisha', fa: 'قلیان', ar: 'شيشة' },
+    vape: { de: 'Vape', en: 'Vape', fa: 'ویپ', ar: 'فيب' },
+    eis: { de: 'Eis', en: 'Ice Cream', fa: 'بستنی', ar: 'آيس كريم' },
   },
 }
 
 const mainCategories = [
   {
-    id: 'essen',
+    id: 'lebensmittel',
     icon: UtensilsCrossed,
     color: 'from-emerald-500 to-emerald-600',
     bgColor: 'bg-emerald-50',
@@ -41,7 +44,7 @@ const mainCategories = [
     ],
   },
   {
-    id: 'trinken',
+    id: 'getraenke',
     icon: Wine,
     color: 'from-blue-500 to-blue-600',
     bgColor: 'bg-blue-50',
@@ -59,7 +62,7 @@ const mainCategories = [
     textColor: 'text-red-700',
     subCategories: [
       'Zigaretten', 'Vape / E-Zigaretten', 'Drehtabak & Zubehör',
-      'Shisha / Wasserpfeife', 'Feuerzeuge & Zubehör', 'Papers & Tips', 'Rauchbedarf'
+      'Feuerzeuge & Zubehör', 'Papers & Tips', 'Rauchbedarf'
     ],
   },
   {
@@ -69,6 +72,30 @@ const mainCategories = [
     bgColor: 'bg-purple-50',
     textColor: 'text-purple-700',
     subCategories: ['Drogerie'],
+  },
+  {
+    id: 'shisha',
+    icon: Cigarette,
+    color: 'from-amber-500 to-amber-600',
+    bgColor: 'bg-amber-50',
+    textColor: 'text-amber-700',
+    subCategories: ['Shisha / Wasserpfeife'],
+  },
+  {
+    id: 'vape',
+    icon: Cigarette,
+    color: 'from-cyan-500 to-cyan-600',
+    bgColor: 'bg-cyan-50',
+    textColor: 'text-cyan-700',
+    subCategories: ['Vape / E-Zigaretten'],
+  },
+  {
+    id: 'eis',
+    icon: Snowflake,
+    color: 'from-sky-400 to-sky-600',
+    bgColor: 'bg-sky-50',
+    textColor: 'text-sky-700',
+    subCategories: ['Eis / Speiseeis', 'Eiscreme'],
   },
 ]
 

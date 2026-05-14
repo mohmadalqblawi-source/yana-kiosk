@@ -19,6 +19,7 @@ import {
   Milk,
   Droplets,
   Utensils,
+  Snowflake,
 } from 'lucide-react'
 
 interface ProductCardProps {
@@ -39,6 +40,7 @@ function getCategoryIcon(category: string) {
   if (cat.includes('shisha') || cat.includes('drehtabak') || cat.includes('papers') || cat.includes('feuerzeug') || cat.includes('rauch')) return { icon: Cigarette, color: 'from-gray-500 to-gray-700', bg: 'bg-gray-50' }
   if (cat.includes('drogerie')) return { icon: Pill, color: 'from-purple-400 to-purple-600', bg: 'bg-purple-50' }
   if (cat.includes('lebensmittel') || cat.includes('essen')) return { icon: Utensils, color: 'from-green-400 to-green-600', bg: 'bg-green-50' }
+  if (cat.includes('eis') || cat.includes('speiseeis') || cat.includes('eiscreme')) return { icon: Snowflake, color: 'from-sky-300 to-sky-500', bg: 'bg-sky-50' }
   if (cat.includes('getränkekiste') || cat.includes('kasten')) return { icon: Beer, color: 'from-green-400 to-emerald-600', bg: 'bg-emerald-50' }
   return { icon: ShoppingBag, color: 'from-emerald-400 to-emerald-600', bg: 'bg-emerald-50' }
 }
@@ -67,6 +69,7 @@ function getCategoryEmoji(category: string) {
   if (cat.includes('papers')) return '📄'
   if (cat.includes('drogerie')) return '🧴'
   if (cat.includes('lebensmittel') || cat.includes('essen')) return '🥫'
+  if (cat.includes('eis') || cat.includes('speiseeis') || cat.includes('eiscreme')) return '🍦'
   if (cat.includes('getränkekiste') || cat.includes('kasten')) return '📦'
   return '📦'
 }

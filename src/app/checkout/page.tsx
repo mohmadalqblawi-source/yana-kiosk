@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { loadStripe, StripeElementsOptions } from '@stripe/stripe-js'
@@ -9,10 +9,7 @@ import { useCartStore } from '@/store/cart'
 import { useUIStore } from '@/store/ui'
 import { useLanguageStore } from '@/store/language'
 import { formatPrice, calculateVAT } from '@/lib/utils'
-import { ArrowLeft, Check, CreditCard, ShoppingBag, Loader2, Truck, Lock } from 'lucide-react'
-
-const stripeKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
-const stripePromise = stripeKey ? loadStripe(stripeKey) : null
+import { ArrowLeft, Check, CreditCard, ShoppingBag, Loader2, Truck, Lock, AlertCircle } from 'lucide-react'
 
 const inlineTranslations = {
   backToCart: { de: 'Zurück zum Warenkorb', en: 'Back to Cart', fa: 'بازگشت به سبد خرید', ar: 'العودة إلى سلة التسوق' },
@@ -50,178 +47,28 @@ const inlineTranslations = {
   payNow: { de: 'Jetzt bezahlen', en: 'Pay Now', fa: 'پرداخت کن', ar: 'ادفع الآن' },
   securePayment: { de: 'Sichere Zahlung mit Stripe', en: 'Secure payment with Stripe', fa: 'پرداخت امن با Stripe', ar: 'دفع آمن عبر Stripe' },
   stripeNotLoaded: { de: 'Zahlungsformular wird geladen...', en: 'Loading payment form...', fa: 'در حال بارگذاری فرم پرداخت...', ar: 'جار تحميل نموذج الدفع...' },
-}
-
-function CheckoutForm({
-  formData,
-  onOrderSuccess,
-  submitting,
-  setSubmitting,
-  totalWithShipping,
-  clientSecret,
-}: {
-  formData: { customerName: string; customerEmail: string; customerPhone: string; shippingMethod: 'pickup' | 'dhl' | 'hermes' }
-  onOrderSuccess: () => void
-  submitting: boolean
-  setSubmitting: (v: boolean) => void
-  totalWithShipping: number
-  clientSecret: string
-}) {
-  const stripe = useStripe()
-  const elements = useElements()
-  const addToast = useUIStore((s) => s.addToast)
-  const { lang } = useLanguageStore()
-  const clearCart = useCartStore((s) => s.clearCart)
-  const items = useCartStore((s) => s.items)
-
-  const tr = (key: string) => {
-    const keys = key.split('.')
-    let obj: any = inlineTranslations
-    for (const k of keys) {
-      if (obj && typeof obj === 'object' && k in obj) obj = obj[k]
-      else return key
-    }
-    if (obj && typeof obj === 'object' && lang in obj) return obj[lang]
-    return key
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!stripe || !elements) return
-
-    setSubmitting(true)
-
-    try {
-      // 1) Submit payment
-      const { error: submitError } = await elements.submit()
-      if (submitError) {
-        addToast(submitError.message || tr('errorToast'), 'error')
-        setSubmitting(false)
-        return
-      }
-
-      // 2) Create order in backend
-      const orderRes = await fetch('/api/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          customerName: formData.customerName,
-          customerEmail: formData.customerEmail,
-          customerPhone: formData.customerPhone,
-          shippingMethod: formData.shippingMethod,
-          items: items.map((item) => ({
-            productId: item.productId,
-            productName: item.name,
-            priceNet: item.priceNet,
-            vatRate: item.vatRate,
-            quantity: item.quantity,
-          })),
-        }),
-      })
-
-      if (!orderRes.ok) {
-        const errData = await orderRes.json()
-        throw new Error(errData.error || 'Failed to create order')
-      }
-
-      const order = await orderRes.json()
-
-      // 3) Confirm payment with Stripe
-      const { error: confirmError } = await stripe.confirmPayment({
-        elements,
-        clientSecret,
-        redirect: 'if_required',
-        confirmParams: {
-          return_url: window.location.origin + '/checkout',
-          payment_method_data: {
-            billing_details: {
-              name: formData.customerName,
-              email: formData.customerEmail,
-              phone: formData.customerPhone || undefined,
-            },
-          },
-        },
-      })
-
-      if (confirmError) {
-        addToast(confirmError.message || tr('errorToast'), 'error')
-        setSubmitting(false)
-        return
-      }
-
-      // 4) Success
-      clearCart()
-      onOrderSuccess()
-      addToast(tr('successToast'), 'success')
-    } catch (error) {
-      console.error('Order error:', error)
-      addToast(tr('errorToast'), 'error')
-    } finally {
-      setSubmitting(false)
-    }
-  }
-
-  return (
-    <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-gray-100 p-6 sm:p-8 space-y-6">
-      {/* Payment Section */}
-      <div>
-        <h2 className="text-xl font-bold text-gray-900 flex items-center gap-3 mb-4">
-          <Lock className="w-5 h-5 text-emerald-600" />
-          {tr('cardPayment')}
-        </h2>
-        <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-          {stripe && elements ? (
-            <PaymentElement
-              options={{
-                layout: 'tabs',
-                fields: {
-                  billingDetails: {
-                    name: 'never',
-                    email: 'never',
-                    phone: 'never',
-                  },
-                },
-              }}
-            />
-          ) : (
-            <div className="flex items-center justify-center py-8 text-sm text-gray-500">
-              <Loader2 className="w-5 h-5 animate-spin mr-2" />
-              {tr('stripeNotLoaded')}
-            </div>
-          )}
-        </div>
-        <p className="text-xs text-gray-400 mt-2 flex items-center gap-1">
-          <Lock className="w-3 h-3" /> {tr('securePayment')}
-        </p>
-      </div>
-
-      <motion.button
-        whileHover={{ scale: 1.01 }}
-        whileTap={{ scale: 0.99 }}
-        type="submit"
-        disabled={submitting || !stripe || !elements}
-        className="w-full py-4 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-2xl font-bold text-base hover:shadow-lg hover:shadow-emerald-600/20 transition-all flex items-center justify-center gap-2 disabled:opacity-70"
-      >
-        {submitting ? (
-          <>
-            <Loader2 className="w-5 h-5 animate-spin" />
-            {tr('ordering')}
-          </>
-        ) : (
-          <>
-            <Lock className="w-5 h-5" />
-            {tr('payNow')} — {formatPrice(totalWithShipping)}
-          </>
-        )}
-      </motion.button>
-    </form>
-  )
+  stripeError: { de: 'Fehler beim Laden des Zahlungsformulars', en: 'Error loading payment form', fa: 'خطا در بارگذاری فرم پرداخت', ar: 'خطأ في تحميل نموذج الدفع' },
+  fillDataFirst: { de: 'Bitte füllen Sie Name und E-Mail aus', en: 'Please fill in name and email', fa: 'لطفاً نام و ایمیل را پر کنید', ar: 'يرجى ملء الاسم والبريد الإلكتروني' },
+  retry: { de: 'Erneut versuchen', en: 'Retry', fa: 'تلاش مجدد', ar: 'إعادة المحاولة' },
 }
 
 export default function CheckoutPage() {
   const { items, getTotalGross, getTotalNet, getTotalVat, getVatBreakdown, clearCart, getItemCount } = useCartStore()
   const addToast = useUIStore((s) => s.addToast)
   const { lang } = useLanguageStore()
+  // Load stripe client-side only
+  const [stripePromise, setStripePromise] = useState<Promise<any> | null>(null)
+  const [stripeKeyError, setStripeKeyError] = useState(false)
+
+  useEffect(() => {
+    const key = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+    if (!key) {
+      console.error('STRIPE ERROR: NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY is not set')
+      setStripeKeyError(true)
+      return
+    }
+    setStripePromise(loadStripe(key))
+  }, [])
 
   const tr = (key: string) => {
     const keys = key.split('.')
@@ -245,36 +92,51 @@ export default function CheckoutPage() {
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [clientSecret, setClientSecret] = useState<string | null>(null)
+  const [paymentError, setPaymentError] = useState<string | null>(null)
+  const [loadingPayment, setLoadingPayment] = useState(false)
 
   const { vat7, vat19 } = getVatBreakdown()
   const totalNet = getTotalNet()
   const totalVat = getTotalVat()
   const totalGross = getTotalGross()
-  const count = getItemCount()
 
-  // Create payment intent when customer data + shipping is ready
   const createPaymentIntent = useCallback(async () => {
     if (!formData.customerName || !formData.customerEmail || items.length === 0) return
+    setLoadingPayment(true)
+    setPaymentError(null)
     try {
       const total = totalGross + shippingCost
+      console.log('Creating payment intent for amount:', total)
       const res = await fetch('/api/create-payment-intent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ amount: total }),
       })
-      if (!res.ok) throw new Error('Failed')
       const data = await res.json()
+      if (!res.ok) {
+        throw new Error(data.error || `HTTP ${res.status}`)
+      }
+      console.log('Payment intent created:', data.paymentIntentId)
       setClientSecret(data.clientSecret)
-    } catch (err) {
+    } catch (err: any) {
       console.error('Payment intent error:', err)
+      setPaymentError(err.message || 'Failed to create payment')
+      addToast(tr('errorToast'), 'error')
+    } finally {
+      setLoadingPayment(false)
     }
-  }, [formData.customerName, formData.customerEmail, totalGross, shippingCost, items.length])
+  }, [formData.customerName, formData.customerEmail, totalGross, shippingCost, items.length, addToast])
 
+  // Auto-create payment intent when customer data is complete
+  const prevFormKey = useRef('')
+  const formKey = `${formData.customerName}|${formData.customerEmail}|${formData.shippingMethod}|${items.length}|${totalGross}`
+  
   useEffect(() => {
-    if (formData.customerName && formData.customerEmail && items.length > 0 && !clientSecret) {
+    if (formData.customerName && formData.customerEmail && items.length > 0 && !clientSecret && formKey !== prevFormKey.current) {
+      prevFormKey.current = formKey
       createPaymentIntent()
     }
-  }, [formData.customerName, formData.customerEmail, items.length, clientSecret, createPaymentIntent])
+  }, [formKey, formData.customerName, formData.customerEmail, items.length, clientSecret, createPaymentIntent])
 
   const handleOrderSuccess = () => {
     setSubmitted(true)
@@ -282,7 +144,7 @@ export default function CheckoutPage() {
 
   if (submitted) {
     return (
-      <main className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+      <main className="min-h-screen bg-gradient-to-b from-gray-50 to-white pt-28 pb-16">
         <div className="max-w-lg mx-auto px-4 py-20 text-center">
           <motion.div
             initial={{ scale: 0 }}
@@ -314,7 +176,7 @@ export default function CheckoutPage() {
 
   if (items.length === 0) {
     return (
-      <main className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+      <main className="min-h-screen bg-gradient-to-b from-gray-50 to-white pt-28 pb-16">
         <div className="max-w-lg mx-auto px-4 py-20 text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -338,21 +200,7 @@ export default function CheckoutPage() {
   }
 
   const totalWithShipping = totalGross + shippingCost
-
-  const stripeOptions: StripeElementsOptions = {
-    clientSecret: clientSecret || '',
-    appearance: {
-      theme: 'stripe',
-      variables: {
-        colorPrimary: '#059669',
-        colorBackground: '#ffffff',
-        colorText: '#111827',
-        colorDanger: '#dc2626',
-        fontFamily: 'ui-sans-serif, system-ui, sans-serif',
-        borderRadius: '12px',
-      },
-    },
-  }
+  const customerDataReady = formData.customerName && formData.customerEmail
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-gray-50 to-white pt-28 pb-16">
@@ -399,7 +247,6 @@ export default function CheckoutPage() {
                     placeholder={tr('namePlaceholder')}
                   />
                 </div>
-
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">
                     {tr('email')} *
@@ -413,7 +260,6 @@ export default function CheckoutPage() {
                     placeholder={tr('emailPlaceholder')}
                   />
                 </div>
-
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">
                     {tr('phone')}
@@ -435,23 +281,16 @@ export default function CheckoutPage() {
                   {tr('shippingTitle')}
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  {/* Pickup */}
                   <button
                     type="button"
                     onClick={() => { setFormData({ ...formData, shippingMethod: 'pickup' }); setClientSecret(null) }}
                     className={`relative p-4 rounded-xl border-2 text-left transition-all ${
-                      formData.shippingMethod === 'pickup'
-                        ? 'border-emerald-500 bg-emerald-50'
-                        : 'border-gray-200 bg-white hover:border-emerald-200'
+                      formData.shippingMethod === 'pickup' ? 'border-emerald-500 bg-emerald-50' : 'border-gray-200 bg-white hover:border-emerald-200'
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                        formData.shippingMethod === 'pickup' ? 'bg-emerald-500' : 'bg-gray-100'
-                      }`}>
-                        <ShoppingBag className={`w-4 h-4 ${
-                          formData.shippingMethod === 'pickup' ? 'text-white' : 'text-gray-400'
-                        }`} />
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${formData.shippingMethod === 'pickup' ? 'bg-emerald-500' : 'bg-gray-100'}`}>
+                        <ShoppingBag className={`w-4 h-4 ${formData.shippingMethod === 'pickup' ? 'text-white' : 'text-gray-400'}`} />
                       </div>
                       <div>
                         <p className="text-sm font-semibold text-gray-900">{tr('pickup')}</p>
@@ -459,24 +298,16 @@ export default function CheckoutPage() {
                       </div>
                     </div>
                   </button>
-
-                  {/* DHL */}
                   <button
                     type="button"
                     onClick={() => { setFormData({ ...formData, shippingMethod: 'dhl' }); setClientSecret(null) }}
                     className={`relative p-4 rounded-xl border-2 text-left transition-all ${
-                      formData.shippingMethod === 'dhl'
-                        ? 'border-emerald-500 bg-emerald-50'
-                        : 'border-gray-200 bg-white hover:border-emerald-200'
+                      formData.shippingMethod === 'dhl' ? 'border-emerald-500 bg-emerald-50' : 'border-gray-200 bg-white hover:border-emerald-200'
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                        formData.shippingMethod === 'dhl' ? 'bg-emerald-500' : 'bg-gray-100'
-                      }`}>
-                        <Truck className={`w-4 h-4 ${
-                          formData.shippingMethod === 'dhl' ? 'text-white' : 'text-gray-400'
-                        }`} />
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${formData.shippingMethod === 'dhl' ? 'bg-emerald-500' : 'bg-gray-100'}`}>
+                        <Truck className={`w-4 h-4 ${formData.shippingMethod === 'dhl' ? 'text-white' : 'text-gray-400'}`} />
                       </div>
                       <div>
                         <p className="text-sm font-semibold text-gray-900">{tr('dhl')}</p>
@@ -484,24 +315,16 @@ export default function CheckoutPage() {
                       </div>
                     </div>
                   </button>
-
-                  {/* Hermes */}
                   <button
                     type="button"
                     onClick={() => { setFormData({ ...formData, shippingMethod: 'hermes' }); setClientSecret(null) }}
                     className={`relative p-4 rounded-xl border-2 text-left transition-all ${
-                      formData.shippingMethod === 'hermes'
-                        ? 'border-emerald-500 bg-emerald-50'
-                        : 'border-gray-200 bg-white hover:border-emerald-200'
+                      formData.shippingMethod === 'hermes' ? 'border-emerald-500 bg-emerald-50' : 'border-gray-200 bg-white hover:border-emerald-200'
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                        formData.shippingMethod === 'hermes' ? 'bg-emerald-500' : 'bg-gray-100'
-                      }`}>
-                        <Truck className={`w-4 h-4 ${
-                          formData.shippingMethod === 'hermes' ? 'text-white' : 'text-gray-400'
-                        }`} />
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${formData.shippingMethod === 'hermes' ? 'bg-emerald-500' : 'bg-gray-100'}`}>
+                        <Truck className={`w-4 h-4 ${formData.shippingMethod === 'hermes' ? 'text-white' : 'text-gray-400'}`} />
                       </div>
                       <div>
                         <p className="text-sm font-semibold text-gray-900">{tr('hermes')}</p>
@@ -513,26 +336,61 @@ export default function CheckoutPage() {
               </div>
             </div>
 
-            {/* Stripe Payment */}
-            {clientSecret ? (
-              <Elements stripe={stripePromise} options={stripeOptions}>
-                <CheckoutForm
-                  formData={formData}
-                  onOrderSuccess={handleOrderSuccess}
-                  submitting={submitting}
-                  setSubmitting={setSubmitting}
-                  totalWithShipping={totalWithShipping}
-                  clientSecret={clientSecret}
-                />
-              </Elements>
-            ) : (
-              <div className="bg-white rounded-2xl border border-gray-100 p-6 sm:p-8">
+            {/* Stripe Payment Section */}
+            <div className="bg-white rounded-2xl border border-gray-100 p-6 sm:p-8">
+              <h2 className="text-xl font-bold text-gray-900 flex items-center gap-3 mb-4">
+                <Lock className="w-5 h-5 text-emerald-600" />
+                {tr('cardPayment')}
+              </h2>
+
+              {stripeKeyError ? (
+                <div className="flex flex-col items-center justify-center py-8 text-center">
+                  <AlertCircle className="w-10 h-10 text-red-400 mb-3" />
+                  <p className="text-sm text-red-600 font-medium">{tr('stripeError')}</p>
+                  <p className="text-xs text-gray-400 mt-1">NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY fehlt</p>
+                </div>
+              ) : !customerDataReady ? (
+                <div className="flex items-center justify-center py-8 text-sm text-gray-500">
+                  <AlertCircle className="w-5 h-5 mr-2 text-yellow-500" />
+                  {tr('fillDataFirst')}
+                </div>
+              ) : loadingPayment ? (
                 <div className="flex items-center justify-center py-8 text-sm text-gray-500">
                   <Loader2 className="w-5 h-5 animate-spin mr-2" />
                   {tr('stripeNotLoaded')}
                 </div>
-              </div>
-            )}
+              ) : paymentError ? (
+                <div className="flex flex-col items-center justify-center py-8 text-center">
+                  <AlertCircle className="w-10 h-10 text-red-400 mb-3" />
+                  <p className="text-sm text-red-600 font-medium">{paymentError}</p>
+                  <button
+                    onClick={() => { setClientSecret(null); setPaymentError(null); createPaymentIntent() }}
+                    className="mt-3 px-4 py-2 bg-emerald-600 text-white text-sm rounded-xl hover:bg-emerald-700 transition-colors"
+                  >
+                    {tr('retry')}
+                  </button>
+                </div>
+              ) : clientSecret && stripePromise ? (
+                <Elements stripe={stripePromise} options={{ clientSecret, appearance: { theme: 'stripe', variables: { colorPrimary: '#059669', colorBackground: '#ffffff', colorText: '#111827', borderRadius: '12px' } } }}>
+                  <CheckoutFormContent
+                    formData={formData}
+                    onOrderSuccess={handleOrderSuccess}
+                    submitting={submitting}
+                    setSubmitting={setSubmitting}
+                    totalWithShipping={totalWithShipping}
+                    clientSecret={clientSecret}
+                  />
+                </Elements>
+              ) : (
+                <div className="flex items-center justify-center py-8 text-sm text-gray-500">
+                  <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                  {tr('stripeNotLoaded')}
+                </div>
+              )}
+              <p className="text-xs text-gray-400 mt-3 flex items-center gap-1">
+                <Lock className="w-3 h-3" /> {tr('securePayment')}
+              </p>
+            </div>
           </motion.div>
 
           {/* Order Summary */}
@@ -543,7 +401,6 @@ export default function CheckoutPage() {
           >
             <div className="bg-white rounded-2xl border border-gray-100 p-6 sticky top-24">
               <h2 className="text-lg font-bold text-gray-900 mb-6">{tr('orderSummary')}</h2>
-
               <div className="space-y-3 mb-6">
                 {items.map((item) => {
                   const { gross } = calculateVAT(item.priceNet, item.vatRate)
@@ -556,14 +413,11 @@ export default function CheckoutPage() {
                         <p className="text-sm font-medium text-gray-900 truncate">{item.name}</p>
                         <p className="text-xs text-gray-500">{item.quantity}x {formatPrice(gross)}</p>
                       </div>
-                      <span className="text-sm font-semibold text-gray-900">
-                        {formatPrice(gross * item.quantity)}
-                      </span>
+                      <span className="text-sm font-semibold text-gray-900">{formatPrice(gross * item.quantity)}</span>
                     </div>
                   )
                 })}
               </div>
-
               <div className="space-y-3 text-sm border-t border-gray-100 pt-4">
                 <div className="flex justify-between text-gray-600">
                   <span>{tr('netTotal')}</span>
@@ -579,11 +433,7 @@ export default function CheckoutPage() {
                 </div>
                 <div className="flex justify-between text-gray-600">
                   <span>{tr('shipping')}</span>
-                  <span>{shippingCost === 0 ? (
-                    <span className="text-emerald-600 font-medium">{tr('free')}</span>
-                  ) : (
-                    formatPrice(shippingCost)
-                  )}</span>
+                  <span>{shippingCost === 0 ? <span className="text-emerald-600 font-medium">{tr('free')}</span> : formatPrice(shippingCost)}</span>
                 </div>
                 <div className="border-t border-gray-100 pt-3">
                   <div className="flex justify-between text-lg font-bold text-gray-900">
@@ -598,5 +448,111 @@ export default function CheckoutPage() {
         </div>
       </div>
     </main>
+  )
+}
+
+function CheckoutFormContent({
+  formData,
+  onOrderSuccess,
+  submitting,
+  setSubmitting,
+  totalWithShipping,
+  clientSecret,
+}: {
+  formData: { customerName: string; customerEmail: string; customerPhone: string; shippingMethod: string }
+  onOrderSuccess: () => void
+  submitting: boolean
+  setSubmitting: (v: boolean) => void
+  totalWithShipping: number
+  clientSecret: string
+}) {
+  const stripe = useStripe()
+  const elements = useElements()
+  const addToast = useUIStore((s) => s.addToast)
+  const { lang } = useLanguageStore()
+  const clearCart = useCartStore((s) => s.clearCart)
+  const items = useCartStore((s) => s.items)
+
+  const tr = (key: string) => {
+    const keys = key.split('.')
+    let obj: any = inlineTranslations
+    for (const k of keys) {
+      if (obj && typeof obj === 'object' && k in obj) obj = obj[k]
+      else return key
+    }
+    if (obj && typeof obj === 'object' && lang in obj) return obj[lang]
+    return key
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!stripe || !elements) return
+    setSubmitting(true)
+    try {
+      const { error: submitError } = await elements.submit()
+      if (submitError) { addToast(submitError.message || tr('errorToast'), 'error'); setSubmitting(false); return }
+
+      // Create order
+      const orderRes = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customerName: formData.customerName,
+          customerEmail: formData.customerEmail,
+          customerPhone: formData.customerPhone,
+          shippingMethod: formData.shippingMethod,
+          items: items.map((i) => ({ productId: i.productId, productName: i.name, priceNet: i.priceNet, vatRate: i.vatRate, quantity: i.quantity })),
+        }),
+      })
+      if (!orderRes.ok) throw new Error((await orderRes.json()).error || 'Order failed')
+      await orderRes.json()
+
+      // Confirm payment
+      const { error: confirmError } = await stripe.confirmPayment({
+        elements,
+        clientSecret,
+        redirect: 'if_required',
+        confirmParams: {
+          return_url: window.location.origin + '/checkout',
+          payment_method_data: { billing_details: { name: formData.customerName, email: formData.customerEmail, phone: formData.customerPhone || undefined } },
+        },
+      })
+      if (confirmError) { addToast(confirmError.message || tr('errorToast'), 'error'); setSubmitting(false); return }
+
+      clearCart()
+      onOrderSuccess()
+      addToast(tr('successToast'), 'success')
+    } catch (error: any) {
+      console.error('Order error:', error)
+      addToast(error.message || tr('errorToast'), 'error')
+    } finally { setSubmitting(false) }
+  }
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 mb-4">
+        {stripe && elements ? (
+          <PaymentElement options={{ layout: 'tabs', fields: { billingDetails: { name: 'never', email: 'never', phone: 'never' } } }} />
+        ) : (
+          <div className="flex items-center justify-center py-8 text-sm text-gray-500">
+            <Loader2 className="w-5 h-5 animate-spin mr-2" />
+            {tr('stripeNotLoaded')}
+          </div>
+        )}
+      </div>
+      <motion.button
+        whileHover={{ scale: 1.01 }}
+        whileTap={{ scale: 0.99 }}
+        type="submit"
+        disabled={submitting || !stripe || !elements}
+        className="w-full py-4 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-2xl font-bold text-base hover:shadow-lg hover:shadow-emerald-600/20 transition-all flex items-center justify-center gap-2 disabled:opacity-70"
+      >
+        {submitting ? (
+          <><Loader2 className="w-5 h-5 animate-spin" /> {tr('ordering')}</>
+        ) : (
+          <><Lock className="w-5 h-5" /> {tr('payNow')} — {formatPrice(totalWithShipping)}</>
+        )}
+      </motion.button>
+    </form>
   )
 }

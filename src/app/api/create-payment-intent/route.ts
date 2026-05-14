@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-const stripeSecretKey = process.env.STRIPE_SECRET_KEY
-
 export async function POST(request: NextRequest) {
   try {
+    const stripeSecretKey = process.env.STRIPE_SECRET_KEY
+
     if (!stripeSecretKey) {
+      console.error('STRIPE ERROR: STRIPE_SECRET_KEY is not set in environment')
       return NextResponse.json(
         { error: 'Stripe is not configured' },
         { status: 500 }
@@ -21,29 +22,34 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Call Stripe API directly to create a payment intent
+    const amountInCents = Math.round(amount * 100)
+
+    // Use URLSearchParams properly — automatic_payment_methods must be sent as a string
+    const formBody = new URLSearchParams()
+    formBody.append('amount', amountInCents.toString())
+    formBody.append('currency', 'eur')
+    formBody.append('automatic_payment_methods[enabled]', 'true')
+
     const stripeRes = await fetch('https://api.stripe.com/v1/payment_intents', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${stripeSecretKey}`,
         'Content-Type': 'application/x-www-form-urlencoded',
       },
-      body: new URLSearchParams({
-        amount: Math.round(amount * 100).toString(),
-        currency: 'eur',
-        automatic_payment_methods: '{"enabled":true}',
-      }),
+      body: formBody.toString(),
     })
 
     const data = await stripeRes.json()
 
     if (!stripeRes.ok) {
-      console.error('Stripe error:', data)
+      console.error('Stripe API error:', JSON.stringify(data))
       return NextResponse.json(
         { error: data.error?.message || 'Payment failed' },
         { status: stripeRes.status }
       )
     }
+
+    console.log('Stripe payment intent created:', data.id)
 
     return NextResponse.json({
       clientSecret: data.client_secret,

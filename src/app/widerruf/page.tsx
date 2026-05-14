@@ -100,7 +100,7 @@ export default function WiderrufPage() {
                 <p>Barsb&uuml;tteler Hof 2c</p>
                 <p>22885 Barsb&uuml;ttel</p>
                 <p>Deutschland</p>
-                <p className="mt-2">Tel.: 01604873902</p>
+                <p className="mt-2">Tel.: 040 6704066</p>
                 <p>E-Mail: yana-kiosk@web.de</p>
               </div>
               <p>mittels einer eindeutigen Erkl&auml;rung (z. B. ein mit der Post versandter Brief oder E-Mail) &uuml;ber Ihren Entschluss, diesen Vertrag zu widerrufen, informieren. Sie k&ouml;nnen daf&uuml;r das beigef&uuml;gte Muster-Widerrufsformular verwenden, das jedoch nicht vorgeschrieben ist.</p>

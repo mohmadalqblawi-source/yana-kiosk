@@ -127,7 +127,7 @@ export const translations = {
     name: { de: 'Maryam Rezaie', en: 'Maryam Rezaie', fa: 'مریم رضایی', ar: 'مريم رضائي' },
     address: { de: 'Barsbütteler Hof 2c, 22885 Barsbüttel', en: 'Barsbütteler Hof 2c, 22885 Barsbüttel', fa: 'Barsbütteler Hof 2c, 22885 Barsbüttel', ar: 'Barsbütteler Hof 2c, 22885 Barsbüttel' },
     contactTitle: { de: 'Kontakt', en: 'Contact', fa: 'تماس', ar: 'الاتصال' },
-    phone: { de: '01604873902', en: '01604873902', fa: '۰۱۶۰۴۸۷۳۹۰۲', ar: '٠١٦٠٤٨٧٣٩٠٢' },
+    phone: { de: '040 6704066', en: '040 6704066', fa: '۰۴۰ ۶۷۰۴۰۶۶', ar: '٠٤٠ ٦٧٠٤٠٦٦' },
     email: { de: 'yana-kiosk@web.de', en: 'yana-kiosk@web.de', fa: 'yana-kiosk@web.de', ar: 'yana-kiosk@web.de' },
     source: { de: 'Quelle: eRecht24', en: 'Source: eRecht24', fa: 'منبع: eRecht24', ar: 'المصدر: eRecht24' },
   },

@@ -94,7 +94,7 @@ export default function DatenschutzPage() {
                 <p>Barsb&uuml;tteler Hof 2c</p>
                 <p>22885 Barsb&uuml;ttel</p>
                 <p>Deutschland</p>
-                <p className="mt-2">Tel.: 01604873902</p>
+                <p className="mt-2">Tel.: 040 6704066</p>
                 <p>E-Mail: yana-kiosk@web.de</p>
               </div>
             </section>
@@ -166,6 +166,17 @@ export default function DatenschutzPage() {
             <section>
               <h3 className="text-base font-bold text-gray-900 mb-2">7) Dauer der Speicherung personenbezogener Daten</h3>
               <p>Die Dauer der Speicherung von personenbezogenen Daten bemisst sich anhand der jeweiligen Rechtsgrundlage, am Verarbeitungszweck und &ndash; sofern einschl&auml;gig &ndash; zus&auml;tzlich anhand der jeweiligen gesetzlichen Aufbewahrungsfrist (z.B. handels- und steuerrechtliche Aufbewahrungsfristen).</p>
+            </section>
+
+            <section>
+              <h3 className="text-base font-bold text-gray-900 mb-2">8) Beschwerderecht bei der Aufsichtsbeh&ouml;rde</h3>
+              <p>Sie haben das Recht, sich bei der zust&auml;ndigen Datenschutzaufsichtsbeh&ouml;rde zu beschweren:</p>
+              <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 mt-2">
+                <p className="font-semibold text-gray-900">Unabh&auml;ngiges Landeszentrum f&uuml;r Datenschutz Schleswig-Holstein (ULD)</p>
+                <p>Holstenstra&szlig;e 98</p>
+                <p>24103 Kiel</p>
+                <p><a href="https://www.datenschutzzentrum.de" target="_blank" rel="noopener noreferrer" className="text-emerald-600 hover:underline">www.datenschutzzentrum.de</a></p>
+              </div>
             </section>
 
             {/* Source */}

@@ -46,7 +46,7 @@ async function main() {
         id: 'default',
         name: 'YaNa Kiosk',
         address: 'Barsbütteler Hof 2c, 22885 Barsbüttel',
-        phone: '01604873902',
+        phone: '040 6704066',
         email: 'yana-kiosk@web.de',
       },
     })

@@ -7,9 +7,9 @@ import { ArrowLeft, Phone, Mail, MapPin, Scale, ShieldCheck } from 'lucide-react
 
 const inlineTranslations = {
   backToHome: { de: 'Zurück zur Startseite', en: 'Back to Home', fa: 'بازگشت به خانه', ar: 'العودة إلى الرئيسية' },
-  disputeResolution: { de: 'Streitbeilegung', en: 'Dispute Resolution', fa: 'حل اختلاف', ar: 'حل النزاعات' },
-  disputeText: { de: 'Wir sind zur Teilnahme an einem Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle weder verpflichtet noch bereit.', en: 'We are neither obliged nor willing to participate in dispute resolution proceedings before a consumer arbitration board.', fa: 'ما نه ملزم هستیم و نه مایل به شرکت در فرآیند حل اختلاف در برابر هیئت داوری مصرف‌کنندگان.', ar: 'نحن لسنا ملزمين ولا راغبين في المشاركة في إجراءات تسوية المنازعات أمام هيئة التحكيم الاستهلاكية.' },
-  statusLabel: { de: 'Stand:', en: 'As of:', fa: 'تاریخ:', ar: 'تاريخ:' },
+  mstvTitle: { de: 'Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV', en: 'Responsible for content according to § 18 Abs. 2 MStV', fa: 'مسئول محتوا طبق § 18 Abs. 2 MStV', ar: 'المسؤول عن المحتوى وفقاً لـ § 18 Abs. 2 MStV' },
+  disputeTitle: { de: 'Streitbeilegung', en: 'Dispute Resolution', fa: 'حل اختلاف', ar: 'حل النزاعات' },
+  disputeText: { de: 'Die Europäische Kommission stellt eine Plattform zur Online-Streitbeilegung (OS) bereit: https://ec.europa.eu/consumers/odr — Wir sind nicht bereit oder verpflichtet, an Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen.', en: 'The European Commission provides a platform for online dispute resolution (OS): https://ec.europa.eu/consumers/odr — We are not willing or obliged to participate in dispute resolution proceedings before a consumer arbitration board.', fa: 'کمیسیون اروپا یک پلتفرم برای حل اختلاف آنلاین (OS) فراهم کرده است: https://ec.europa.eu/consumers/odr — ما مایل یا ملزم به شرکت در فرآیندهای حل اختلاف در برابر هیئت داوری مصرف‌کنندگان نیستیم.', ar: 'توفر المفوضية الأوروبية منصة لتسوية المنازعات عبر الإنترنت (OS): https://ec.europa.eu/consumers/odr — نحن لسنا مستعدين أو ملزمين بالمشاركة في إجراءات تسوية المنازعات أمام هيئة التحكيم الاستهلاكية.' },
 }
 
 export default function ImpressumPage() {
@@ -75,10 +75,10 @@ export default function ImpressumPage() {
                 <div className="flex items-center gap-3">
                   <Phone className="w-4 h-4 text-gray-400 shrink-0" />
                   <a
-                    href="tel:01604873902"
+                    href="tel:0406704066"
                     className="text-green-600 hover:text-green-700 hover:underline transition-colors"
                   >
-                    01604873902
+                    040 6704066
                   </a>
                 </div>
                 <div className="flex items-center gap-3">
@@ -93,32 +93,23 @@ export default function ImpressumPage() {
               </div>
             </div>
 
-            {/* Dispute Resolution */}
+            {/* Responsible for content (§ 18 Abs. 2 MStV) */}
             <div className="bg-white rounded-2xl border border-gray-200 p-6 sm:p-8 shadow-sm">
               <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
                 <ShieldCheck className="w-5 h-5 text-green-600" />
-                {t('disputeResolution')}
+                {t('mstvTitle')}
               </h2>
-              <p className="text-sm text-gray-600 leading-relaxed">
-                {t('disputeText')}
-              </p>
-              <p className="mt-4 text-xs text-gray-400">
-                {t('statusLabel')} 13.05.2026
-              </p>
+              <p className="text-gray-600">Maryam Rezaie, Barsbütteler Hof 2c, 22885 Barsbüttel</p>
             </div>
 
-            {/* Source */}
+            {/* Dispute Resolution */}
             <div className="bg-white rounded-2xl border border-gray-200 p-6 sm:p-8 shadow-sm">
-              <h2 className="text-lg font-semibold text-gray-900 mb-2">Quelle</h2>
-              <p className="text-sm text-gray-500">
-                <a
-                  href="https://www.e-recht24.de"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-green-600 hover:text-green-700 hover:underline"
-                >
-                  eRecht24
-                </a>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <Scale className="w-5 h-5 text-green-600" />
+                {t('disputeTitle')}
+              </h2>
+              <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-line">
+                {t('disputeText')}
               </p>
             </div>
           </div>

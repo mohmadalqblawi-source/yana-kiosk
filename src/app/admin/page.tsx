@@ -632,19 +632,56 @@ export default function AdminPage() {
                       <Package className="w-4 h-5 text-emerald-500" />
                       Kategorie <span className="text-red-400">*</span>
                     </label>
-                    <input
-                      type="text"
+                    <select
                       value={form.category}
                       onChange={(e) => setForm({ ...form, category: e.target.value })}
-                      list="categories"
-                      className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600/20 focus:border-emerald-600 transition-all"
-                      placeholder="z.B. Snickers, Cola, Wasser..."
-                    />
-                    <datalist id="categories">
-                      {categories.map((cat) => (
-                        <option key={cat} value={cat} />
-                      ))}
-                    </datalist>
+                      className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600/20 focus:border-emerald-600 transition-all appearance-none"
+                    >
+                      <option value="">-- Kategorie auswählen --</option>
+                      <optgroup label="🥗 Lebensmittel">
+                        <option value="Schokoladenriegel">Schokoladenriegel</option>
+                        <option value="Sweets & Snacks">Sweets & Snacks</option>
+                        <option value="Chips">Chips</option>
+                        <option value="Fruchtgummi & Lakritz">Fruchtgummi & Lakritz</option>
+                        <option value="Lebensmittel">Lebensmittel</option>
+                        <option value="Kaugummi">Kaugummi</option>
+                        <option value="Kinderartikel">Kinderartikel</option>
+                      </optgroup>
+                      <optgroup label="🥤 Getränke">
+                        <option value="Softdrinks">Softdrinks</option>
+                        <option value="Energy Drinks">Energy Drinks</option>
+                        <option value="Eistee">Eistee</option>
+                        <option value="Saft">Saft</option>
+                        <option value="Milch">Milch</option>
+                        <option value="Wasser">Wasser</option>
+                        <option value="Bier">Bier</option>
+                        <option value="Sekt">Sekt</option>
+                        <option value="Wein">Wein</option>
+                        <option value="Spirituosen">Spirituosen</option>
+                        <option value="Getränkekisten">Getränkekisten</option>
+                      </optgroup>
+                      <optgroup label="🚬 Rauchen">
+                        <option value="Zigaretten">Zigaretten</option>
+                        <option value="Vape / E-Zigaretten">Vape / E-Zigaretten</option>
+                        <option value="Drehtabak & Zubehör">Drehtabak & Zubehör</option>
+                        <option value="Feuerzeuge & Zubehör">Feuerzeuge & Zubehör</option>
+                        <option value="Papers & Tips">Papers & Tips</option>
+                        <option value="Rauchbedarf">Rauchbedarf</option>
+                      </optgroup>
+                      <optgroup label="🪬 Shisha">
+                        <option value="Shisha / Wasserpfeife">Shisha / Wasserpfeife</option>
+                      </optgroup>
+                      <optgroup label="💨 Vape">
+                        <option value="Vape / E-Zigaretten">Vape / E-Zigaretten</option>
+                      </optgroup>
+                      <optgroup label="🍦 Eis">
+                        <option value="Eis / Speiseeis">Eis / Speiseeis</option>
+                        <option value="Eiscreme">Eiscreme</option>
+                      </optgroup>
+                      <optgroup label="🧴 Drogerie">
+                        <option value="Drogerie">Drogerie</option>
+                      </optgroup>
+                    </select>
                   </div>
 
                   <div className="bg-gray-50 rounded-2xl p-4 sm:p-5 border border-gray-100">

@@ -446,6 +446,50 @@ export default function AdminOrdersPage() {
                   </div>
                 </div>
 
+                {/* Shipping Info */}
+                <div className="bg-gray-50 rounded-2xl p-5 border border-gray-100">
+                  <h3 className="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">
+                    <Truck className="w-4 h-4 text-emerald-500" />
+                    Versandinformationen
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center">
+                        <Truck className="w-4 h-4 text-gray-400" />
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-400">Versandart</p>
+                        <p className="text-sm font-medium text-gray-900">
+                          {viewOrder.shippingMethod === 'pickup' ? 'Abholung' :
+                           viewOrder.shippingMethod === 'delivery' ? 'Lieferung durch uns' :
+                           viewOrder.shippingMethod === 'dhl' ? 'DHL' :
+                           viewOrder.shippingMethod === 'hermes' ? 'Hermes' : viewOrder.shippingMethod}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center">
+                        <Euro className="w-4 h-4 text-gray-400" />
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-400">Versandkosten</p>
+                        <p className="text-sm font-medium text-gray-900">{formatPrice(viewOrder.shippingCost)}</p>
+                      </div>
+                    </div>
+                    {viewOrder.customerAddress && (
+                      <div className="flex items-center gap-3 sm:col-span-2">
+                        <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center">
+                          <MapPin className="w-4 h-4 text-gray-400" />
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-400">Lieferadresse</p>
+                          <p className="text-sm font-medium text-gray-900">{viewOrder.customerAddress}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
                 {/* Order Items */}
                 <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
                   <div className="px-5 py-4 border-b border-gray-100">

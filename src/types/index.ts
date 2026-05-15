@@ -39,6 +39,9 @@ export interface Order {
   customerName: string
   customerEmail: string
   customerPhone: string | null
+  customerAddress: string | null
+  shippingMethod: string
+  shippingCost: number
   items: OrderItem[]
   totalNet: number
   totalVat: number

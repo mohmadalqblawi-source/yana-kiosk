@@ -40,6 +40,7 @@ model Order {
   customerName  String
   customerEmail String
   customerPhone String?
+  customerAddress String?
   shippingMethod String   @default("pickup")
   shippingCost  Float     @default(0)
   items      OrderItem[]

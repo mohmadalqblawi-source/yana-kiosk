@@ -4,10 +4,10 @@ import { prisma } from '@/lib/prisma'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { customerName, customerEmail, customerPhone, shippingMethod, items } = body
+    const { customerName, customerEmail, customerPhone, customerAddress, shippingMethod, items } = body
 
     const shipMethod = shippingMethod || 'pickup'
-    const shippingCost = shipMethod === 'pickup' ? 0 : 4.90
+    const shippingCost = shipMethod === 'pickup' ? 0 : shipMethod === 'delivery' ? 3.00 : 4.90
 
     if (!customerName || !customerEmail || !items || items.length === 0) {
       return NextResponse.json(
@@ -42,6 +42,7 @@ export async function POST(request: NextRequest) {
         customerName,
         customerEmail,
         customerPhone,
+        customerAddress,
         shippingMethod: shipMethod,
         shippingCost,
         items: {

@@ -9,7 +9,7 @@ import { useCartStore } from '@/store/cart'
 import { useUIStore } from '@/store/ui'
 import { useLanguageStore } from '@/store/language'
 import { formatPrice, calculateVAT } from '@/lib/utils'
-import { ArrowLeft, Check, CreditCard, ShoppingBag, Loader2, Truck, Lock, AlertCircle } from 'lucide-react'
+import { ArrowLeft, Check, CreditCard, ShoppingBag, Loader2, Truck, Lock, AlertCircle, Car } from 'lucide-react'
 
 const inlineTranslations = {
   backToCart: { de: 'Zurück zum Warenkorb', en: 'Back to Cart', fa: 'بازگشت به سبد خرید', ar: 'العودة إلى سلة التسوق' },
@@ -24,6 +24,8 @@ const inlineTranslations = {
   shippingTitle: { de: 'Versandart wählen', en: 'Choose Shipping Method', fa: 'انتخاب روش ارسال', ar: 'اختر طريقة الشحن' },
   pickup: { de: 'Abholung', en: 'Pickup', fa: 'تحویل حضوری', ar: 'استلام شخصي' },
   free: { de: 'Kostenlos', en: 'Free', fa: 'رایگان', ar: 'مجاني' },
+  deliverySelf: { de: 'Lieferung', en: 'Delivery', fa: 'تحویل', ar: 'توصيل' },
+  deliverySelfDesc: { de: 'Lieferung durch uns', en: 'Delivery by us', fa: 'تحویل توسط ما', ar: 'توصيل بواسطتنا' },
   ordering: { de: 'Bestellung wird aufgegeben...', en: 'Placing order...', fa: 'در حال ثبت سفارش...', ar: 'جار تقديم الطلب...' },
   placeOrder: { de: 'Bestellung aufgeben', en: 'Place Order', fa: 'ثبت سفارش', ar: 'تقديم الطلب' },
   orderSummary: { de: 'Bestellübersicht', en: 'Order Summary', fa: 'خلاصه سفارش', ar: 'ملخص الطلب' },
@@ -85,10 +87,11 @@ export default function CheckoutPage() {
     customerName: '',
     customerEmail: '',
     customerPhone: '',
-    shippingMethod: 'pickup' as 'pickup' | 'dhl' | 'hermes',
+    customerAddress: '',
+    shippingMethod: 'pickup' as 'pickup' | 'dhl' | 'hermes' | 'delivery',
   })
 
-  const shippingCost = formData.shippingMethod === 'pickup' ? 0 : 4.90
+  const shippingCost = formData.shippingMethod === 'pickup' ? 0 : formData.shippingMethod === 'delivery' ? 3.00 : 4.90
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [clientSecret, setClientSecret] = useState<string | null>(null)
@@ -280,7 +283,8 @@ export default function CheckoutPage() {
                   <Truck className="w-5 h-5 text-emerald-600" />
                   {tr('shippingTitle')}
                 </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {/* Pickup */}
                   <button
                     type="button"
                     onClick={() => { setFormData({ ...formData, shippingMethod: 'pickup' }); setClientSecret(null) }}
@@ -298,6 +302,26 @@ export default function CheckoutPage() {
                       </div>
                     </div>
                   </button>
+                  {/* Delivery by us */}
+                  <button
+                    type="button"
+                    onClick={() => { setFormData({ ...formData, shippingMethod: 'delivery' }); setClientSecret(null) }}
+                    className={`relative p-4 rounded-xl border-2 text-left transition-all ${
+                      formData.shippingMethod === 'delivery' ? 'border-emerald-500 bg-emerald-50' : 'border-gray-200 bg-white hover:border-emerald-200'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${formData.shippingMethod === 'delivery' ? 'bg-emerald-500' : 'bg-gray-100'}`}>
+                        <Car className={`w-4 h-4 ${formData.shippingMethod === 'delivery' ? 'text-white' : 'text-gray-400'}`} />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-gray-900">{tr('deliverySelf')}</p>
+                        <p className="text-xs text-gray-500">{tr('deliverySelfDesc')}</p>
+                        <p className="text-xs font-semibold text-emerald-600">3,00 €</p>
+                      </div>
+                    </div>
+                  </button>
+                  {/* DHL */}
                   <button
                     type="button"
                     onClick={() => { setFormData({ ...formData, shippingMethod: 'dhl' }); setClientSecret(null) }}
@@ -315,6 +339,7 @@ export default function CheckoutPage() {
                       </div>
                     </div>
                   </button>
+                  {/* Hermes */}
                   <button
                     type="button"
                     onClick={() => { setFormData({ ...formData, shippingMethod: 'hermes' }); setClientSecret(null) }}
@@ -333,6 +358,26 @@ export default function CheckoutPage() {
                     </div>
                   </button>
                 </div>
+                {/* Address field for delivery */}
+                {formData.shippingMethod === 'delivery' && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    className="overflow-hidden"
+                  >
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                      Lieferadresse * <span className="text-xs text-gray-400 font-normal">(Straße, Hausnr., PLZ, Ort)</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.customerAddress || ''}
+                      onChange={(e) => setFormData({ ...formData, customerAddress: e.target.value })}
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600/20 focus:border-emerald-600 transition-all"
+                      placeholder="Musterstraße 123, 22885 Barsbüttel"
+                    />
+                  </motion.div>
+                )}
               </div>
             </div>
 
@@ -459,7 +504,7 @@ function CheckoutFormContent({
   totalWithShipping,
   clientSecret,
 }: {
-  formData: { customerName: string; customerEmail: string; customerPhone: string; shippingMethod: string }
+  formData: { customerName: string; customerEmail: string; customerPhone: string; customerAddress?: string; shippingMethod: string }
   onOrderSuccess: () => void
   submitting: boolean
   setSubmitting: (v: boolean) => void
@@ -500,6 +545,7 @@ function CheckoutFormContent({
           customerName: formData.customerName,
           customerEmail: formData.customerEmail,
           customerPhone: formData.customerPhone,
+          customerAddress: formData.customerAddress,
           shippingMethod: formData.shippingMethod,
           items: items.map((i) => ({ productId: i.productId, productName: i.name, priceNet: i.priceNet, vatRate: i.vatRate, quantity: i.quantity })),
         }),

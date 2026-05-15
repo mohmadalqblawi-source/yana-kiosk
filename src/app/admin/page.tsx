@@ -134,7 +134,7 @@ export default function AdminPage() {
 
   const handleSave = async () => {
     if (!form.name || !form.priceNet || !form.category) {
-      addToast('Bitte alle Pflichtfelder ausf\u00fcllen', 'error')
+      addToast('Bitte alle Pflichtfelder ausfüllen', 'error')
       return
     }
 
@@ -160,7 +160,7 @@ export default function AdminPage() {
       addToast(
         editingProduct
           ? `${form.name} wurde aktualisiert`
-          : `${form.name} wurde hinzugef\u00fcgt`,
+          : `${form.name} wurde hinzugefügt`,
         'success'
       )
       setShowModal(false)
@@ -174,7 +174,7 @@ export default function AdminPage() {
   }
 
   const handleDelete = async (id: string, name: string) => {
-    if (!window.confirm(`Sind Sie sicher, dass Sie "${name}" l\u00f6schen m\u00f6chten?`)) return
+    if (!window.confirm(`Sind Sie sicher, dass Sie "${name}" löschen möchten?`)) return
 
     try {
       const res = await fetch(`/api/admin/products?id=${id}`, {
@@ -182,10 +182,10 @@ export default function AdminPage() {
         headers: { Authorization: `Bearer ${token}` },
       })
       if (!res.ok) throw new Error('Failed to delete')
-      addToast(`${name} wurde gel\u00f6scht`, 'success')
+      addToast(`${name} wurde gelöscht`, 'success')
       if (token) fetchProducts(token)
     } catch (error) {
-      addToast('Fehler beim L\u00f6schen', 'error')
+      addToast('Fehler beim Löschen', 'error')
     }
   }
 
@@ -560,7 +560,7 @@ export default function AdminPage() {
                       {editingProduct ? 'Produkt bearbeiten' : 'Neues Produkt'}
                     </h2>
                     <p className="text-xs text-gray-500 mt-0.5">
-                      {editingProduct ? 'Produktdaten aktualisieren' : 'Neues Produkt zum Shop hinzuf\u00fcgen'}
+                      {editingProduct ? 'Produktdaten aktualisieren' : 'Neues Produkt zum Shop hinzufügen'}
                     </p>
                   </div>
                 </div>
@@ -638,7 +638,7 @@ export default function AdminPage() {
                       onChange={(e) => setForm({ ...form, category: e.target.value })}
                       list="categories"
                       className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600/20 focus:border-emerald-600 transition-all"
-                      placeholder="z.B. Schokolade, Getr\u00e4nke..."
+                      placeholder="z.B. Snickers, Cola, Wasser..."
                     />
                     <datalist id="categories">
                       {categories.map((cat) => (
@@ -696,28 +696,64 @@ export default function AdminPage() {
                   </button>
 
                   {showImageField && (
-                    <div className="p-4 pt-2">
+                    <div className="p-4 pt-2 space-y-3">
+                      {/* Preview */}
                       <div className="flex items-center gap-4">
-                        <div className="w-16 h-16 rounded-xl bg-white overflow-hidden shrink-0 flex items-center justify-center border border-gray-200">
+                        <div className="w-20 h-20 rounded-xl bg-white overflow-hidden shrink-0 flex items-center justify-center border border-gray-200">
                           {form.image ? (
                             <img src={form.image} alt="" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
                           ) : (
-                            <ImageIcon className="w-6 h-6 text-gray-300" />
+                            <ImageIcon className="w-8 h-8 text-gray-300" />
                           )}
                         </div>
-                        <div className="flex-1">
-                          <input
-                            type="url"
-                            value={form.image}
-                            onChange={(e) => setForm({ ...form, image: e.target.value })}
-                            className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600/20 focus:border-emerald-600 transition-all"
-                            placeholder="https://example.com/bild.jpg"
-                          />
-                          <p className="text-xs text-gray-400 mt-1">
-                            Bild-URL einf\u00fcgen (optional - kannst du sp\u00e4ter erg\u00e4nzen)
-                          </p>
+                        <div className="flex-1 space-y-2">
+                          {/* File Upload */}
+                          <label className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-emerald-50 border-2 border-emerald-200 border-dashed rounded-xl text-sm font-medium text-emerald-700 hover:bg-emerald-100 hover:border-emerald-300 transition-all cursor-pointer">
+                            <Camera className="w-4 h-4" />
+                            <span>Vom Gerät hochladen</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={async (e) => {
+                                const file = e.target.files?.[0]
+                                if (!file) return
+                                if (file.size > 5 * 1024 * 1024) {
+                                  addToast('Datei zu groß (max 5MB)', 'error')
+                                  return
+                                }
+                                try {
+                                  const uploadForm = new FormData()
+                                  uploadForm.append('file', file)
+                                  const res = await fetch('/api/upload', {
+                                    method: 'POST',
+                                    body: uploadForm,
+                                  })
+                                  const data = await res.json()
+                                  if (!res.ok) throw new Error(data.error || 'Upload failed')
+                                  setForm({ ...form, image: data.url })
+                                  addToast('Bild hochgeladen', 'success')
+                                } catch (err: any) {
+                                  addToast(err.message || 'Upload fehlgeschlagen', 'error')
+                                }
+                              }}
+                            />
+                          </label>
+                          {/* URL Input */}
+                          <div className="relative">
+                            <input
+                              type="url"
+                              value={form.image}
+                              onChange={(e) => setForm({ ...form, image: e.target.value })}
+                              className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600/20 focus:border-emerald-600 transition-all"
+                              placeholder="oder Bild-URL eingeben..."
+                            />
+                          </div>
                         </div>
                       </div>
+                      <p className="text-xs text-gray-400 text-center">
+                        Unterstützt JPG, PNG, WebP · Max 5MB
+                      </p>
                     </div>
                   )}
                 </div>
@@ -756,7 +792,7 @@ export default function AdminPage() {
                   ) : (
                     <>
                       <Plus className="w-4 h-4" />
-                      {editingProduct ? 'Aktualisieren' : 'Produkt hinzuf\u00fcgen'}
+                      {editingProduct ? 'Aktualisieren' : 'Produkt hinzufügen'}
                     </>
                   )}
                 </motion.button>

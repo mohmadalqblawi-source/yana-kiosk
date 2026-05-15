@@ -34,7 +34,13 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
 
+  const isLoginPage = pathname === '/admin/login'
+
   useEffect(() => {
+    if (isLoginPage) {
+      useAdminStore.getState().setLoading(false)
+      return
+    }
     const savedToken = localStorage.getItem('admin-token')
     if (savedToken) {
       setUser(
@@ -46,7 +52,11 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
       setLoading(false)
       router.replace('/admin/login')
     }
-  }, [router, setUser])
+  }, [router, setUser, isLoginPage])
+
+  if (isLoginPage) {
+    return <>{children}</>
+  }
 
   if (isLoading) {
     return (

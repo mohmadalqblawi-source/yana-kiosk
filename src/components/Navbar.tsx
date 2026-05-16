@@ -69,7 +69,7 @@ export default function Navbar() {
                   sizes="(max-width: 768px) 64px, 76px"
                 />
               </motion.div>
-              <span className="text-xl md:text-2xl font-bold bg-gradient-to-r from-green-700 to-green-800 bg-clip-text text-transparent">
+              <span className="text-[1.625rem] sm:text-3xl md:text-[2.125rem] font-extrabold leading-tight tracking-tight bg-gradient-to-r from-green-700 to-green-800 bg-clip-text text-transparent select-none">
                 YaNa Kiosk
               </span>
             </Link>

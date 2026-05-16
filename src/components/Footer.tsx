@@ -48,7 +48,7 @@ export default function Footer() {
                   className="w-full h-full object-contain p-1"
                 />
               </div>
-              <span className="text-xl font-bold text-white">YaNa Kiosk</span>
+              <span className="text-[1.5rem] sm:text-[1.75rem] font-extrabold text-white tracking-tight leading-tight">YaNa Kiosk</span>
             </Link>
             <p className="text-sm text-gray-400 leading-relaxed">
               {t('tagline')}

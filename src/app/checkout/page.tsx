@@ -579,6 +579,10 @@ function CheckoutFormContent({
   const clearCart = useCartStore((s) => s.clearCart)
   const items = useCartStore((s) => s.items)
 
+  // TASK 4: AGB / Widerruf legal acceptance checkbox state
+  const [legalAccepted, setLegalAccepted] = useState(false)
+  const [legalError, setLegalError] = useState(false)
+
   const tr = (key: string) => {
     const keys = key.split('.')
     let obj: any = inlineTranslations
@@ -593,6 +597,12 @@ function CheckoutFormContent({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!shopAcceptsOrders) return
+    // TASK 4: block submission if legal checkbox unchecked
+    if (!legalAccepted) {
+      setLegalError(true)
+      return
+    }
+    setLegalError(false)
     if (!stripe || !elements) return
     setSubmitting(true)
     try {
@@ -653,11 +663,53 @@ function CheckoutFormContent({
           </div>
         )}
       </div>
+      {/* TASK 4: Mandatory legal checkbox — must be directly above the pay button */}
+      <div className="mb-4">
+        <label className="flex items-start gap-3 cursor-pointer group">
+          <input
+            type="checkbox"
+            checked={legalAccepted}
+            onChange={(e) => {
+              setLegalAccepted(e.target.checked)
+              if (e.target.checked) setLegalError(false)
+            }}
+            className="mt-0.5 w-4 h-4 shrink-0 rounded border-gray-300 accent-emerald-600 cursor-pointer"
+          />
+          <span className="text-sm text-gray-700 leading-relaxed">
+            Ich habe die{' '}
+            <a
+              href="/agb"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-emerald-600 underline hover:text-emerald-700 transition-colors"
+            >
+              AGB
+            </a>{' '}
+            und die{' '}
+            <a
+              href="/widerruf"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-emerald-600 underline hover:text-emerald-700 transition-colors"
+            >
+              Widerrufsbelehrung
+            </a>{' '}
+            gelesen und akzeptiere diese.{' '}
+            <span className="text-red-500 font-semibold">*</span>
+          </span>
+        </label>
+        {legalError && (
+          <p className="mt-2 text-sm text-red-600 font-medium">
+            Bitte akzeptieren Sie die AGB und die Widerrufsbelehrung, um fortzufahren.
+          </p>
+        )}
+      </div>
+
       <motion.button
         whileHover={{ scale: 1.01 }}
         whileTap={{ scale: 0.99 }}
         type="submit"
-        disabled={submitting || !stripe || !elements || !shopAcceptsOrders}
+        disabled={submitting || !stripe || !elements || !shopAcceptsOrders || !legalAccepted}
         className="w-full py-4 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-2xl font-bold text-base hover:shadow-lg hover:shadow-emerald-600/20 transition-all flex items-center justify-center gap-2 disabled:opacity-70"
       >
         {submitting ? (

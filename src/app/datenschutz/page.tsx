@@ -124,6 +124,49 @@ export default function DatenschutzPage() {
               <p className="mt-2">S&auml;mtliche auf unserer Website erhobenen Daten werden auf den Servern des Anbieters verarbeitet. Wir haben mit dem Anbieter einen Auftragsverarbeitungsvertrag geschlossen. F&uuml;r Daten&uuml;bermittlungen in die USA hat sich der Anbieter dem EU-US-Datenschutzrahmen (EU-US Data Privacy Framework) angeschlossen.</p>
             </section>
 
+            {/* TASK 2: New Zahlungsdienstleister section — added after Hosting/Vercel section */}
+            <section>
+              <h3 className="text-base font-bold text-gray-900 mb-2">3a) Zahlungsdienstleister</h3>
+              <p>Zur Abwicklung von Zahlungen setzen wir die folgenden Zahlungsdienstleister ein. Die Weitergabe Ihrer Daten erfolgt ausschlie&szlig;lich zum Zweck der Zahlungsabwicklung gem&auml;&szlig; Art. 6 Abs. 1 lit. b DSGVO (Vertragserf&uuml;llung).</p>
+
+              {/* Stripe */}
+              <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 mt-3 space-y-1">
+                <p className="font-semibold text-gray-900">Stripe</p>
+                <p className="text-sm">Stripe Payments Europe Ltd, 1 Grand Canal Street Lower, Grand Canal Dock, Dublin, Ireland</p>
+                <p className="text-sm"><span className="font-medium">Zweck:</span> Verarbeitung von Zahlungsdaten</p>
+                <p className="text-sm"><span className="font-medium">Rechtsgrundlage:</span> Art. 6 Abs. 1 lit. b DSGVO (Vertragserf&uuml;llung)</p>
+                <p className="text-sm">
+                  <span className="font-medium">Datenschutzerkl&auml;rung: </span>
+                  <a
+                    href="https://stripe.com/de/privacy"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-emerald-600 hover:underline"
+                  >
+                    https://stripe.com/de/privacy
+                  </a>
+                </p>
+              </div>
+
+              {/* PayPal */}
+              <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 mt-3 space-y-1">
+                <p className="font-semibold text-gray-900">PayPal</p>
+                <p className="text-sm">PayPal (Europe) S.&agrave;r.l. et Cie S.C.A., 22-24 Boulevard Royal, L-2449 Luxemburg</p>
+                <p className="text-sm"><span className="font-medium">Rechtsgrundlage:</span> Art. 6 Abs. 1 lit. b DSGVO (Vertragserf&uuml;llung)</p>
+                <p className="text-sm">
+                  <span className="font-medium">Datenschutzerkl&auml;rung: </span>
+                  <a
+                    href="https://www.paypal.com/de/webapps/mpp/ua/privacy-full"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-emerald-600 hover:underline"
+                  >
+                    https://www.paypal.com/de/webapps/mpp/ua/privacy-full
+                  </a>
+                </p>
+              </div>
+            </section>
+
             <section>
               <h3 className="text-base font-bold text-gray-900 mb-2">4) Kontaktaufnahme</h3>
               <p>Im Rahmen der Kontaktaufnahme mit uns (z.B. per Kontaktformular oder E-Mail) werden &ndash; ausschlie&szlig;lich zum Zweck der Bearbeitung und Beantwortung Ihres Anliegens und nur im daf&uuml;r erforderlichen Umfang &ndash; personenbezogene Daten verarbeitet. Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO bzw. lit. b DSGVO.</p>
@@ -132,15 +175,15 @@ export default function DatenschutzPage() {
             <section>
               <h3 className="text-base font-bold text-gray-900 mb-2">5) Datenverarbeitung zur Bestellabwicklung</h3>
               <p>5.1 Soweit f&uuml;r die Vertragsabwicklung zu Liefer- und Zahlungszwecken erforderlich, werden die von uns erhobenen personenbezogenen Daten gem&auml;&szlig; Art. 6 Abs. 1 lit. b DSGVO an das beauftragte Transportunternehmen und das beauftragte Kreditinstitut weitergegeben.</p>
-              <p className="mt-2">5.2 Verwendung von Paymentdienstleistern (Zahlungsdiensten):</p>
+              <p className="mt-2">5.2 Verwendung von Paymentdienstleistern (Zahlungsdiensten) — siehe hierzu auch Abschnitt 3a.</p>
               <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 mt-2 space-y-3">
                 <div>
-                  <p className="font-semibold text-gray-900">- Apple Pay</p>
-                  <p className="text-xs text-gray-400">Apple Distribution International, Hollyhill Industrial Estate, Hollyhill, Cork, Irland</p>
+                  <p className="font-semibold text-gray-900">- Stripe</p>
+                  <p className="text-xs text-gray-400">Stripe Payments Europe Ltd, 1 Grand Canal Street Lower, Grand Canal Dock, Dublin, Ireland</p>
                 </div>
                 <div>
                   <p className="font-semibold text-gray-900">- PayPal</p>
-                  <p className="text-xs text-gray-400">PayPal (Europe) S.&agrave; r.l. et Cie, S.C.A., 22-24 Boulevard Royal, L-2449 Luxemburg</p>
+                  <p className="text-xs text-gray-400">PayPal (Europe) S.&agrave;r.l. et Cie S.C.A., 22-24 Boulevard Royal, L-2449 Luxemburg</p>
                 </div>
               </div>
             </section>

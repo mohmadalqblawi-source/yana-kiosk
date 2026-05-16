@@ -51,8 +51,10 @@ export default function AdminPage() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [activeTab, setActiveTab] = useState<'overview' | 'products'>('overview')
   const [storeSettings, setStoreSettings] = useState<StoreSettings | null>(null)
-  const [settingsLoading, setSettingsLoading] = useState(false)
+  const [settingsLoading, setSettingsLoading] = useState(true)
   const [toggleSaving, setToggleSaving] = useState(false)
+  // Fallback isOpen — true until settings load; stays true if API fails so toggle always shows
+  const isOpen = storeSettings?.isOpen ?? true
 
   const fetchStoreSettings = useCallback(async (authToken: string) => {
     setSettingsLoading(true)
@@ -201,16 +203,22 @@ export default function AdminPage() {
   }
 
   const handleStoreOpenToggle = async (nextOpen: boolean) => {
-    if (!token || !storeSettings) return
+    if (!token) return
     setToggleSaving(true)
+    // Optimistic update so the UI responds immediately
+    setStoreSettings(prev => prev
+      ? { ...prev, isOpen: nextOpen }
+      : { name: '', address: '', phone: '', email: '', isOpen: nextOpen }
+    )
     try {
+      const current = storeSettings ?? { name: '', address: '', phone: '', email: '' }
       const res = await fetch('/api/admin/settings', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ ...storeSettings, isOpen: nextOpen }),
+        body: JSON.stringify({ ...current, isOpen: nextOpen }),
       })
       if (!res.ok) throw new Error('save failed')
       const data = await res.json()
@@ -222,10 +230,12 @@ export default function AdminPage() {
         isOpen: data.isOpen !== false,
       })
       addToast(
-        nextOpen ? 'Shop ist online — Bestellungen möglich' : 'Shop ist offline — keine neuen Bestellungen',
+        nextOpen ? '✅ Shop ist jetzt Online — Bestellungen möglich' : '⏸ Shop ist Offline — keine neuen Bestellungen',
         'success'
       )
     } catch {
+      // Revert optimistic update on failure
+      setStoreSettings(prev => prev ? { ...prev, isOpen: !nextOpen } : null)
       addToast('Shop-Status konnte nicht gespeichert werden', 'error')
     } finally {
       setToggleSaving(false)
@@ -250,65 +260,63 @@ export default function AdminPage() {
 
   return (
     <div className="space-y-6">
-      {/* Shop online / offline */}
-      {settingsLoading && token ? (
+      {/* Shop online / offline — always visible */}
+      {settingsLoading ? (
         <div className="h-[88px] bg-gray-100 rounded-2xl animate-pulse border border-gray-100" aria-hidden />
-      ) : storeSettings ? (
+      ) : (
         <motion.div
           initial={{ opacity: 0, y: -6 }}
           animate={{ opacity: 1, y: 0 }}
           className={`rounded-2xl border p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
-            storeSettings.isOpen
-              ? 'bg-white border-emerald-100 shadow-sm shadow-emerald-500/5'
+            isOpen
+              ? 'bg-emerald-50/60 border-emerald-200 shadow-sm shadow-emerald-500/10'
               : 'bg-gray-50 border-gray-200'
           }`}
         >
           <div className="flex items-start gap-4">
             <div
               className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${
-                storeSettings.isOpen ? 'bg-emerald-100' : 'bg-gray-200'
+                isOpen ? 'bg-emerald-100' : 'bg-gray-200'
               }`}
             >
-              <Power
-                className={`w-6 h-6 ${storeSettings.isOpen ? 'text-emerald-600' : 'text-gray-500'}`}
-              />
+              <Power className={`w-6 h-6 ${isOpen ? 'text-emerald-600' : 'text-gray-400'}`} />
             </div>
             <div>
               <p className="text-sm font-bold text-gray-900">Shop-Status</p>
               <p className="text-xs text-gray-500 mt-0.5 max-w-xl">
-                {storeSettings.isOpen
+                {isOpen
                   ? 'Online — Kunden können Produkte kaufen und zur Kasse gehen.'
                   : 'Offline — der Shop wird angezeigt, aber neue Bestellungen und Zahlungen sind gesperrt.'}
               </p>
-              <p className="text-[11px] font-semibold mt-2 uppercase tracking-wide">
-                <span className={storeSettings.isOpen ? 'text-emerald-600' : 'text-gray-500'}>
-                  {storeSettings.isOpen ? '● Online' : '● Offline'}
-                </span>
+              <p className={`text-xs font-bold mt-2 ${isOpen ? 'text-emerald-600' : 'text-gray-400'}`}>
+                {isOpen ? '● Online' : '● Offline'}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-3 sm:flex-col sm:items-end sm:gap-2">
-            <span className="text-xs text-gray-500 hidden sm:inline">Schalter</span>
+            <span className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">
+              {isOpen ? 'Einschalten' : 'Ausschalten'}
+            </span>
             <button
               type="button"
               role="switch"
-              aria-checked={storeSettings.isOpen}
+              aria-checked={isOpen}
               aria-busy={toggleSaving}
               disabled={toggleSaving}
-              onClick={() => handleStoreOpenToggle(!storeSettings.isOpen)}
-              className={`relative w-[52px] h-8 rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 disabled:opacity-60 ${
-                storeSettings.isOpen ? 'bg-emerald-500' : 'bg-gray-300'
+              onClick={() => handleStoreOpenToggle(!isOpen)}
+              className={`relative w-[56px] h-8 rounded-full transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 disabled:opacity-60 ${
+                isOpen ? 'bg-emerald-500 shadow-md shadow-emerald-500/30' : 'bg-gray-300'
               }`}
             >
               <span
-                className={`absolute top-1 left-1 h-6 w-6 rounded-full bg-white shadow transition-transform ${
-                  storeSettings.isOpen ? 'translate-x-5' : 'translate-x-0'
+                className={`absolute top-1 left-1 h-6 w-6 rounded-full bg-white shadow transition-transform duration-300 ${
+                  isOpen ? 'translate-x-6' : 'translate-x-0'
                 }`}
               />
             </button>
           </div>
         </motion.div>
-      ) : null}
+      )}
 
       {/* Dashboard Tabs */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">

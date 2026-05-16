@@ -7,12 +7,11 @@ import { formatPrice, calculateVAT } from '@/lib/utils'
 import { useUIStore } from '@/store/ui'
 import { useAdminStore } from '@/store/admin'
 import {
-  Package, Plus, Search, Edit3, Trash2, X, DollarSign,
-  ShoppingBag, AlertTriangle, Loader2, Image as ImageIcon,
+  Package, Plus, Search, Edit3, Trash2, X,
+  AlertTriangle, Loader2, Image as ImageIcon,
   Type, Euro, Tag, Warehouse, CheckSquare, Square,
   ChevronDown, ChevronUp, Camera, Store, Grid3X3, List,
-  TrendingUp, Percent, RefreshCw, Layers, Star,
-  Power,
+  Layers, Power,
 } from 'lucide-react'
 
 interface ProductForm {

@@ -29,7 +29,7 @@ export default function StoreClosedBanner() {
   if (!ready || !closed) return null
 
   return (
-    <div className="sticky top-16 md:top-20 z-20 bg-amber-500 text-white px-4 py-2.5 text-center text-sm font-medium shadow-md border-b border-amber-600/30">
+    <div className="sticky top-[4.6rem] md:top-[5.35rem] z-20 bg-amber-500 text-white px-4 py-2.5 text-center text-sm font-medium shadow-md border-b border-amber-600/30">
       <p className="max-w-3xl mx-auto flex items-center justify-center gap-2 flex-wrap">
         <WifiOff className="w-4 h-4 shrink-0" aria-hidden />
         <span>

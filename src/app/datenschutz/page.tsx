@@ -3,7 +3,7 @@
 import { useLanguageStore } from '@/store/language'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Download, Shield, FileText } from 'lucide-react'
+import { ArrowLeft, Download, Shield } from 'lucide-react'
 
 const inlineTranslations = {
   backToHome: { de: 'Zurück zur Startseite', en: 'Back to Home', fa: 'بازگشت به خانه', ar: 'العودة إلى الرئيسية' },

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import Image from 'next/image'
 import { useAdminStore } from '@/store/admin'
-import { Store, Lock, Mail, Loader2, ArrowLeft } from 'lucide-react'
+import { Lock, Mail, Loader2, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 
 export default function AdminLoginPage() {
@@ -37,7 +37,7 @@ export default function AdminLoginPage() {
 
       setUser(data.user, data.token)
       router.push('/admin')
-    } catch (err) {
+    } catch {
       setError('Verbindungsfehler. Bitte versuchen Sie es erneut.')
     } finally {
       setLoading(false)

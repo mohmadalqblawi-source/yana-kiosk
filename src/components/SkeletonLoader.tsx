@@ -1,7 +1,5 @@
 'use client'
 
-import { motion } from 'framer-motion'
-
 export function ProductCardSkeleton() {
   return (
     <div className="rounded-2xl bg-white border border-gray-100 overflow-hidden">

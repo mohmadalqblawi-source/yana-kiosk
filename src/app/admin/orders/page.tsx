@@ -18,16 +18,11 @@ import {
   Phone,
   Mail,
   MapPin,
-  ChevronRight,
   X,
   Truck,
-  AlertCircle,
-  CreditCard,
   User,
   Calendar,
-  Hash,
   Euro,
-  Download,
   ListOrdered,
 } from 'lucide-react'
 
@@ -111,7 +106,7 @@ export default function AdminOrdersPage() {
         'success'
       )
       fetchOrders()
-    } catch (error) {
+    } catch {
       addToast('Fehler beim Aktualisieren', 'error')
     }
   }

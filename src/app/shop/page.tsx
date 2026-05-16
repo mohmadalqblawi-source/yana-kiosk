@@ -114,8 +114,6 @@ function ShopContent() {
   const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '')
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || '')
   const [selectedMainCat, setSelectedMainCat] = useState('')
-  const [showFilters, setShowFilters] = useState(false)
-
   const tr = (key: string) => {
     const keys = key.split('.')
     let obj: any = inlineTranslations

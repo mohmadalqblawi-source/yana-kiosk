@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
-import { loadStripe, StripeElementsOptions } from '@stripe/stripe-js'
+import { loadStripe } from '@stripe/stripe-js'
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
 import { useCartStore } from '@/store/cart'
 import { useUIStore } from '@/store/ui'
@@ -62,7 +62,7 @@ const inlineTranslations = {
 }
 
 export default function CheckoutPage() {
-  const { items, getTotalGross, getTotalNet, getTotalVat, getVatBreakdown, clearCart, getItemCount } = useCartStore()
+  const { items, getTotalGross, getTotalNet, getVatBreakdown } = useCartStore()
   const addToast = useUIStore((s) => s.addToast)
   const { lang } = useLanguageStore()
   // Load stripe client-side only
@@ -145,7 +145,6 @@ export default function CheckoutPage() {
 
   const { vat7, vat19 } = getVatBreakdown()
   const totalNet = getTotalNet()
-  const totalVat = getTotalVat()
   const totalGross = getTotalGross()
 
   const createPaymentIntent = useCallback(async () => {

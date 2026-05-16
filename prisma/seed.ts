@@ -7,7 +7,9 @@ async function main() {
   console.log('Seeding database...')
 
   // Create admin
-  const hashedPassword = await bcrypt.hash(process.env.ADMIN_PASSWORD || 'Admin123!', 12)
+  const adminPassword = process.env.ADMIN_PASSWORD
+  if (!adminPassword) throw new Error('ADMIN_PASSWORD environment variable is not set')
+  const hashedPassword = await bcrypt.hash(adminPassword, 12)
   
   await prisma.admin.upsert({
     where: { email: process.env.ADMIN_EMAIL || 'admin@yanakiosk.de' },
@@ -224,7 +226,7 @@ async function main() {
   console.log('\n✅ Database seeded successfully!')
   console.log('Admin login:')
   console.log('  Email: admin@yanakiosk.de')
-  console.log('  Password: Admin123!')
+  console.log('  Password: [from ADMIN_PASSWORD env]')
 }
 
 main()

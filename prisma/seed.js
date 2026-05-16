@@ -6,7 +6,9 @@ async function main() {
   console.log('=== YaNa Kiosk Barsbùttel - Database Seeding ===\n');
 
   // Admin
-  const hashedPassword = await bcrypt.hash(process.env.ADMIN_PASSWORD || 'Admin123!', 12);
+  const adminPassword = process.env.ADMIN_PASSWORD;
+  if (!adminPassword) throw new Error('ADMIN_PASSWORD environment variable is not set');
+  const hashedPassword = await bcrypt.hash(adminPassword, 12);
   await prisma.admin.upsert({
     where: { email: process.env.ADMIN_EMAIL || 'admin@yanakiosk.de' },
     update: { password: hashedPassword },
@@ -98,20 +100,20 @@ async function main() {
     { name: 'Funny-Frisch Ungarisch 150g', description: 'Chips mit ungarischem W?rzgeschmack.', priceNet: 4.21, vatRate: 7, category: 'Salzige Snacks', image: 'https://images.unsplash.com/photo-1566478989037-eec170784d0b?w=400&h=400&fit=crop', stock: 50, featured: false },
     { name: 'Funny-Frisch Gesalzen 150g', description: 'Klassisch gesalzene Chips.', priceNet: 4.21, vatRate: 7, category: 'Salzige Snacks', image: 'https://images.unsplash.com/photo-1566478989037-eec170784d0b?w=400&h=400&fit=crop', stock: 60, featured: false },
     // Sùùe Snacks ù Fruchtgummi (7% VAT)
-    { name: 'Haribo Goldb?ren 175g', description: 'Klassische Goldb?ren Fruchtgummi.', priceNet: 3.27, vatRate: 7, category: 'S¸ﬂe Snacks', image: 'https://images.unsplash.com/photo-1621868064663-e0dc2a1fc3f0?w=400&h=400&fit=crop', stock: 100, featured: true },
-    { name: 'Haribo Happy Cola 175g', description: 'Cola-Flaschen Fruchtgummi.', priceNet: 3.27, vatRate: 7, category: 'S¸ﬂe Snacks', image: 'https://images.unsplash.com/photo-1621868064663-e0dc2a1fc3f0?w=400&h=400&fit=crop', stock: 80, featured: false },
-    { name: 'Haribo Phantasia 175g', description: 'Bunte Fruchtgummi-Mischung.', priceNet: 3.27, vatRate: 7, category: 'S¸ﬂe Snacks', image: 'https://images.unsplash.com/photo-1621868064663-e0dc2a1fc3f0?w=400&h=400&fit=crop', stock: 75, featured: false },
-    { name: 'Haribo Pfirsiche 175g', description: 'Pfirsich-Fruchtgummi mit Zucker.', priceNet: 3.27, vatRate: 7, category: 'S¸ﬂe Snacks', image: 'https://images.unsplash.com/photo-1621868064663-e0dc2a1fc3f0?w=400&h=400&fit=crop', stock: 70, featured: false },
-    { name: 'Haribo Lakritz Schnecken', description: 'Lakritz-Schnecken.', priceNet: 3.27, vatRate: 7, category: 'S¸ﬂe Snacks', image: 'https://images.unsplash.com/photo-1621868064663-e0dc2a1fc3f0?w=400&h=400&fit=crop', stock: 60, featured: false },
-    { name: 'Haribo Rainbow Sauer 175g', description: 'Saure Regenbogen-Fruchtgummi.', priceNet: 3.27, vatRate: 7, category: 'S¸ﬂe Snacks', image: 'https://images.unsplash.com/photo-1621868064663-e0dc2a1fc3f0?w=400&h=400&fit=crop', stock: 70, featured: false },
-    { name: 'Nimm2 Lachgummi Softies Frucht Mix 225g', description: 'Weiche Fruchtgummis mit Vitaminen.', priceNet: 3.27, vatRate: 7, category: 'S¸ﬂe Snacks', image: 'https://images.unsplash.com/photo-1621868064663-e0dc2a1fc3f0?w=400&h=400&fit=crop', stock: 60, featured: false },
-    { name: 'Bubble Fizz 1kg', description: 'Brause-Fruchtgummi im Gro?pack.', priceNet: 23.32, vatRate: 7, category: 'S¸ﬂe Snacks', image: 'https://images.unsplash.com/photo-1621868064663-e0dc2a1fc3f0?w=400&h=400&fit=crop', stock: 15, featured: false },
-    { name: 'Haribo Balla-Balla 175g', description: 'Schaumzucker-Fruchtgummi.', priceNet: 3.27, vatRate: 7, category: 'S¸ﬂe Snacks', image: 'https://images.unsplash.com/photo-1621868064663-e0dc2a1fc3f0?w=400&h=400&fit=crop', stock: 65, featured: false },
-    { name: 'Haribo Bunte T?te 175g', description: 'Bunte Fruchtgummi-Mischung.', priceNet: 3.27, vatRate: 7, category: 'S¸ﬂe Snacks', image: 'https://images.unsplash.com/photo-1621868064663-e0dc2a1fc3f0?w=400&h=400&fit=crop', stock: 80, featured: true },
-    { name: 'Haribo Konfekt 175g', description: 'Feine Fruchtgummi-Konfekt Mischung.', priceNet: 3.27, vatRate: 7, category: 'S¸ﬂe Snacks', image: 'https://images.unsplash.com/photo-1621868064663-e0dc2a1fc3f0?w=400&h=400&fit=crop', stock: 55, featured: false },
-    { name: 'Bunte T?te', description: 'Selbstgemachte S??igkeitent?te.', priceNet: 3.27, vatRate: 7, category: 'S¸ﬂe Snacks', image: 'https://images.unsplash.com/photo-1621868064663-e0dc2a1fc3f0?w=400&h=400&fit=crop', stock: 100, featured: false },
-    { name: 'Haribo Tropi Frutti 175g', description: 'Exotische Fruchtgummi-Mischung.', priceNet: 3.27, vatRate: 7, category: 'S¸ﬂe Snacks', image: 'https://images.unsplash.com/photo-1621868064663-e0dc2a1fc3f0?w=400&h=400&fit=crop', stock: 60, featured: false },
-    { name: 'Haribo Wein Gums 175g', description: 'Weinbrandbohnen-Art Fruchtgummi.', priceNet: 3.27, vatRate: 7, category: 'S¸ﬂe Snacks', image: 'https://images.unsplash.com/photo-1621868064663-e0dc2a1fc3f0?w=400&h=400&fit=crop', stock: 55, featured: false },
+    { name: 'Haribo Goldb?ren 175g', description: 'Klassische Goldb?ren Fruchtgummi.', priceNet: 3.27, vatRate: 7, category: 'Sùùe Snacks', image: 'https://images.unsplash.com/photo-1621868064663-e0dc2a1fc3f0?w=400&h=400&fit=crop', stock: 100, featured: true },
+    { name: 'Haribo Happy Cola 175g', description: 'Cola-Flaschen Fruchtgummi.', priceNet: 3.27, vatRate: 7, category: 'Sùùe Snacks', image: 'https://images.unsplash.com/photo-1621868064663-e0dc2a1fc3f0?w=400&h=400&fit=crop', stock: 80, featured: false },
+    { name: 'Haribo Phantasia 175g', description: 'Bunte Fruchtgummi-Mischung.', priceNet: 3.27, vatRate: 7, category: 'Sùùe Snacks', image: 'https://images.unsplash.com/photo-1621868064663-e0dc2a1fc3f0?w=400&h=400&fit=crop', stock: 75, featured: false },
+    { name: 'Haribo Pfirsiche 175g', description: 'Pfirsich-Fruchtgummi mit Zucker.', priceNet: 3.27, vatRate: 7, category: 'Sùùe Snacks', image: 'https://images.unsplash.com/photo-1621868064663-e0dc2a1fc3f0?w=400&h=400&fit=crop', stock: 70, featured: false },
+    { name: 'Haribo Lakritz Schnecken', description: 'Lakritz-Schnecken.', priceNet: 3.27, vatRate: 7, category: 'Sùùe Snacks', image: 'https://images.unsplash.com/photo-1621868064663-e0dc2a1fc3f0?w=400&h=400&fit=crop', stock: 60, featured: false },
+    { name: 'Haribo Rainbow Sauer 175g', description: 'Saure Regenbogen-Fruchtgummi.', priceNet: 3.27, vatRate: 7, category: 'Sùùe Snacks', image: 'https://images.unsplash.com/photo-1621868064663-e0dc2a1fc3f0?w=400&h=400&fit=crop', stock: 70, featured: false },
+    { name: 'Nimm2 Lachgummi Softies Frucht Mix 225g', description: 'Weiche Fruchtgummis mit Vitaminen.', priceNet: 3.27, vatRate: 7, category: 'Sùùe Snacks', image: 'https://images.unsplash.com/photo-1621868064663-e0dc2a1fc3f0?w=400&h=400&fit=crop', stock: 60, featured: false },
+    { name: 'Bubble Fizz 1kg', description: 'Brause-Fruchtgummi im Gro?pack.', priceNet: 23.32, vatRate: 7, category: 'Sùùe Snacks', image: 'https://images.unsplash.com/photo-1621868064663-e0dc2a1fc3f0?w=400&h=400&fit=crop', stock: 15, featured: false },
+    { name: 'Haribo Balla-Balla 175g', description: 'Schaumzucker-Fruchtgummi.', priceNet: 3.27, vatRate: 7, category: 'Sùùe Snacks', image: 'https://images.unsplash.com/photo-1621868064663-e0dc2a1fc3f0?w=400&h=400&fit=crop', stock: 65, featured: false },
+    { name: 'Haribo Bunte T?te 175g', description: 'Bunte Fruchtgummi-Mischung.', priceNet: 3.27, vatRate: 7, category: 'Sùùe Snacks', image: 'https://images.unsplash.com/photo-1621868064663-e0dc2a1fc3f0?w=400&h=400&fit=crop', stock: 80, featured: true },
+    { name: 'Haribo Konfekt 175g', description: 'Feine Fruchtgummi-Konfekt Mischung.', priceNet: 3.27, vatRate: 7, category: 'Sùùe Snacks', image: 'https://images.unsplash.com/photo-1621868064663-e0dc2a1fc3f0?w=400&h=400&fit=crop', stock: 55, featured: false },
+    { name: 'Bunte T?te', description: 'Selbstgemachte S??igkeitent?te.', priceNet: 3.27, vatRate: 7, category: 'Sùùe Snacks', image: 'https://images.unsplash.com/photo-1621868064663-e0dc2a1fc3f0?w=400&h=400&fit=crop', stock: 100, featured: false },
+    { name: 'Haribo Tropi Frutti 175g', description: 'Exotische Fruchtgummi-Mischung.', priceNet: 3.27, vatRate: 7, category: 'Sùùe Snacks', image: 'https://images.unsplash.com/photo-1621868064663-e0dc2a1fc3f0?w=400&h=400&fit=crop', stock: 60, featured: false },
+    { name: 'Haribo Wein Gums 175g', description: 'Weinbrandbohnen-Art Fruchtgummi.', priceNet: 3.27, vatRate: 7, category: 'Sùùe Snacks', image: 'https://images.unsplash.com/photo-1621868064663-e0dc2a1fc3f0?w=400&h=400&fit=crop', stock: 55, featured: false },
     // Softdrinks (19% VAT - drinks)
     { name: 'Sprite 0,33l', description: 'Erfrischende Limette-Zitrone Limonade.', priceNet: 2.10, vatRate: 19, category: 'Softdrinks', image: 'https://images.unsplash.com/photo-1554866585-cd94860890b7?w=400&h=400&fit=crop', stock: 150, featured: true },
     { name: 'Coca-Cola 0,5l', description: 'Einzigartiger Cola-Geschmack, 0,5l PET Flasche.', priceNet: 2.44, vatRate: 19, category: 'Softdrinks', image: 'https://images.unsplash.com/photo-1554866585-cd94860890b7?w=400&h=400&fit=crop', stock: 200, featured: true },
@@ -237,7 +239,7 @@ async function main() {
   console.log('\n=== Database seeded successfully! ===');
   console.log('Store: YaNa Kiosk Barsb?ttel');
   console.log('Address: Barsb?tteler Hof 2c, 22885 Barsb?ttel');
-  console.log('Admin: admin@yanakiosk.de / Admin123!');
+  console.log('Admin: admin@yanakiosk.de / [password from ADMIN_PASSWORD env]');
   console.log('Products: ' + products.length);
 }
 

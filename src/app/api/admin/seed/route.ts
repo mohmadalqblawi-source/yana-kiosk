@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma'
 export async function POST() {
   try {
     // Create admin
-    const hashedPassword = await bcrypt.hash(process.env.ADMIN_PASSWORD || 'Admin123!', 12)
+    const hashedPassword = await bcrypt.hash(process.env.ADMIN_PASSWORD ?? (() => { throw new Error('ADMIN_PASSWORD env var is not set') })(), 12)
     
     await prisma.admin.upsert({
       where: { email: process.env.ADMIN_EMAIL || 'admin@yanakiosk.de' },

@@ -31,7 +31,9 @@ async function main() {
   if (existing) {
     console.log('Admin already exists:', existing.email)
   } else {
-    const hash = await bcrypt.hash('Admin123!', 10)
+    const adminPassword = process.env.ADMIN_PASSWORD;
+    if (!adminPassword) throw new Error('ADMIN_PASSWORD environment variable is not set');
+    const hash = await bcrypt.hash(adminPassword, 10)
     const admin = await prisma.admin.create({
       data: { email: 'admin@yanakiosk.de', password: hash, name: 'Admin' },
     })

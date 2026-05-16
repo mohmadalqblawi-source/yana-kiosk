@@ -36,11 +36,14 @@ export async function GET(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   const admin = requireAdmin(request)
   if (!admin) {
+    console.error('[settings PUT] Unauthorized — token missing or invalid')
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
   try {
     const body = await request.json()
+    console.log('[settings PUT] body received:', JSON.stringify(body))
+
     const settings = await prisma.storeSetting.upsert({
       where: { id: 'default' },
       update: {
@@ -52,17 +55,21 @@ export async function PUT(request: NextRequest) {
       },
       create: {
         id: 'default',
-        name: body.name ?? process.env.NEXT_PUBLIC_STORE_NAME ?? 'YaNa Kiosk',
-        address: body.address ?? process.env.NEXT_PUBLIC_STORE_ADDRESS ?? '',
-        phone: body.phone ?? process.env.NEXT_PUBLIC_STORE_PHONE ?? '',
-        email: body.email ?? process.env.NEXT_PUBLIC_STORE_EMAIL ?? '',
+        name: body.name || process.env.NEXT_PUBLIC_STORE_NAME || 'YaNa Kiosk',
+        address: body.address || process.env.NEXT_PUBLIC_STORE_ADDRESS || '',
+        phone: body.phone || process.env.NEXT_PUBLIC_STORE_PHONE || '',
+        email: body.email || process.env.NEXT_PUBLIC_STORE_EMAIL || '',
         isOpen: typeof body.isOpen === 'boolean' ? body.isOpen : true,
       },
     })
 
+    console.log('[settings PUT] saved isOpen =', settings.isOpen)
     return NextResponse.json(settings)
   } catch (error) {
-    console.error('Error:', error)
-    return NextResponse.json({ error: 'Failed to update settings' }, { status: 500 })
+    console.error('[settings PUT] Error:', error)
+    return NextResponse.json(
+      { error: 'Failed to update settings', detail: String(error) },
+      { status: 500 }
+    )
   }
 }

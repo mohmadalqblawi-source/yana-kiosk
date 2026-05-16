@@ -220,8 +220,8 @@ export default function AdminPage() {
         },
         body: JSON.stringify({ ...current, isOpen: nextOpen }),
       })
-      if (!res.ok) throw new Error('save failed')
       const data = await res.json()
+      if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`)
       setStoreSettings({
         name: data.name ?? '',
         address: data.address ?? '',
@@ -233,10 +233,11 @@ export default function AdminPage() {
         nextOpen ? '✅ Shop ist jetzt Online — Bestellungen möglich' : '⏸ Shop ist Offline — keine neuen Bestellungen',
         'success'
       )
-    } catch {
+    } catch (err: unknown) {
       // Revert optimistic update on failure
       setStoreSettings(prev => prev ? { ...prev, isOpen: !nextOpen } : null)
-      addToast('Shop-Status konnte nicht gespeichert werden', 'error')
+      const msg = err instanceof Error ? err.message : 'Unbekannter Fehler'
+      addToast(`Fehler: ${msg}`, 'error')
     } finally {
       setToggleSaving(false)
     }

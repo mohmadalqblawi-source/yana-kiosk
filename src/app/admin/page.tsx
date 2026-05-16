@@ -17,22 +17,20 @@ import {
 interface ProductForm {
   name: string
   description: string
-  priceNet: string
+  priceBrutto: string
   vatRate: string
   category: string
   image: string
-  stock: string
   featured: boolean
 }
 
 const emptyForm: ProductForm = {
   name: '',
   description: '',
-  priceNet: '',
+  priceBrutto: '',
   vatRate: '19',
   category: '',
   image: '',
-  stock: '0',
   featured: false,
 }
 
@@ -48,6 +46,7 @@ export default function AdminPage() {
   const [saving, setSaving] = useState(false)
   const [categories, setCategories] = useState<string[]>([])
   const [showImageField, setShowImageField] = useState(false)
+  const [togglingActiveId, setTogglingActiveId] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'categories'>('overview')
 
@@ -139,14 +138,13 @@ export default function AdminPage() {
 
   const stats = useMemo(() => {
     const totalProducts = products.length
-    const totalStock = products.reduce((sum, p) => sum + p.stock, 0)
-    const lowStock = products.filter((p) => p.stock > 0 && p.stock <= 5).length
-    const outOfStock = products.filter((p) => p.stock === 0).length
+    const activeProducts = products.filter((p) => p.isActive).length
+    const inactiveProducts = products.filter((p) => !p.isActive).length
     const avgPrice =
       totalProducts > 0
         ? products.reduce((sum, p) => sum + calculateVAT(p.priceNet, p.vatRate).gross, 0) / totalProducts
         : 0
-    return { totalProducts, totalStock, lowStock, outOfStock, avgPrice }
+    return { totalProducts, activeProducts, inactiveProducts, avgPrice }
   }, [products])
 
   const openCreateModal = () => {
@@ -158,14 +156,15 @@ export default function AdminPage() {
 
   const openEditModal = (product: Product) => {
     setEditingProduct(product)
+    // Pre-fill with the brutto (gross) price so admin sees what customers pay
+    const gross = calculateVAT(product.priceNet, product.vatRate).gross
     setForm({
       name: product.name,
       description: product.description,
-      priceNet: product.priceNet.toString(),
+      priceBrutto: gross.toFixed(2),
       vatRate: product.vatRate.toString(),
       category: product.category,
       image: product.image,
-      stock: product.stock.toString(),
       featured: product.featured,
     })
     setShowImageField(!!product.image)
@@ -173,7 +172,7 @@ export default function AdminPage() {
   }
 
   const handleSave = async () => {
-    if (!form.name || !form.priceNet || !form.category) {
+    if (!form.name || !form.priceBrutto || !form.category) {
       addToast('Bitte alle Pflichtfelder ausfüllen', 'error')
       return
     }
@@ -267,6 +266,26 @@ export default function AdminPage() {
       if (token) fetchProducts(token)
     } catch (error) {
       addToast('Fehler beim Löschen', 'error')
+    }
+  }
+
+  const handleToggleActive = async (id: string, current: boolean) => {
+    setTogglingActiveId(id)
+    // Optimistic update
+    setProducts(prev => prev.map(p => p.id === id ? { ...p, isActive: !current } : p))
+    try {
+      const res = await fetch('/api/admin/products', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ id, isActive: !current }),
+      })
+      if (!res.ok) throw new Error('Failed')
+    } catch {
+      // Revert on failure
+      setProducts(prev => prev.map(p => p.id === id ? { ...p, isActive: current } : p))
+      addToast('Fehler beim Aktualisieren des Status', 'error')
+    } finally {
+      setTogglingActiveId(null)
     }
   }
 
@@ -502,9 +521,9 @@ export default function AdminPage() {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             {[
               { label: 'Produkte', value: stats.totalProducts, icon: Package, color: 'from-emerald-600 to-emerald-700' },
-              { label: 'Gesamtbestand', value: stats.totalStock, icon: Layers, color: 'from-blue-500 to-indigo-500' },
-              { label: 'Niedriger Bestand', value: stats.lowStock, icon: AlertTriangle, color: 'from-red-500 to-pink-500' },
-              { label: 'Nicht auf Lager', value: stats.outOfStock, icon: X, color: 'from-gray-500 to-gray-600' },
+              { label: 'Aktiv', value: stats.activeProducts, icon: Layers, color: 'from-blue-500 to-indigo-500' },
+              { label: 'Inaktiv', value: stats.inactiveProducts, icon: AlertTriangle, color: 'from-red-500 to-pink-500' },
+              { label: 'Kategorien', value: categories.length, icon: X, color: 'from-gray-500 to-gray-600' },
             ].map((stat, i) => {
               const Icon = stat.icon
               return (
@@ -784,20 +803,31 @@ export default function AdminPage() {
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
-                        <div className="absolute bottom-2 left-2">
-                          <span className={`px-2 py-0.5 rounded-md text-[10px] font-semibold ${
-                            product.stock === 0 ? 'bg-red-500 text-white' :
-                            product.stock <= 5 ? 'bg-amber-500 text-white' :
-                            'bg-emerald-500 text-white'
-                          }`}>
-                            {product.stock} {product.stock === 1 ? 'Stk' : 'Stk'}
-                          </span>
-                        </div>
+                        {/* Active/inactive indicator */}
+                        {!product.isActive && (
+                          <div className="absolute inset-0 bg-black/30 flex items-center justify-center rounded-t-xl">
+                            <span className="px-2 py-1 bg-black/70 text-white text-[10px] font-bold rounded-lg">INAKTIV</span>
+                          </div>
+                        )}
                       </div>
                       <div className="p-3">
                         <p className="text-xs text-gray-400 font-medium mb-0.5">{product.category}</p>
                         <p className="text-sm font-medium text-gray-900 truncate">{product.name}</p>
-                        <p className="text-sm font-bold text-emerald-600 mt-1">{formatPrice(gross)}</p>
+                        <div className="flex items-center justify-between mt-1">
+                          <p className="text-sm font-bold text-emerald-600">{formatPrice(gross)}</p>
+                          <button
+                            onClick={() => handleToggleActive(product.id, product.isActive)}
+                            disabled={togglingActiveId === product.id}
+                            title={product.isActive ? 'Aktiv — klicken zum Deaktivieren' : 'Inaktiv — klicken zum Aktivieren'}
+                            className={`relative w-9 h-5 rounded-full transition-colors duration-300 shrink-0 ${
+                              product.isActive ? 'bg-emerald-500' : 'bg-gray-300'
+                            } ${togglingActiveId === product.id ? 'opacity-50' : ''}`}
+                          >
+                            <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform duration-300 ${
+                              product.isActive ? 'translate-x-4' : 'translate-x-0'
+                            }`} />
+                          </button>
+                        </div>
                       </div>
                     </motion.div>
                   )
@@ -813,7 +843,7 @@ export default function AdminPage() {
                       <th className="text-left px-4 sm:px-6 py-4 text-[11px] font-semibold text-gray-400 uppercase tracking-wider hidden sm:table-cell">Kategorie</th>
                       <th className="text-right px-4 sm:px-6 py-4 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Preis (brutto)</th>
                       <th className="text-right px-4 sm:px-6 py-4 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">MwSt.</th>
-                      <th className="text-right px-4 sm:px-6 py-4 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Bestand</th>
+                      <th className="text-right px-4 sm:px-6 py-4 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Aktiv</th>
                       <th className="text-right px-4 sm:px-6 py-4 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Aktionen</th>
                     </tr>
                   </thead>
@@ -855,12 +885,18 @@ export default function AdminPage() {
                             <span className="text-sm text-gray-500">{product.vatRate}%</span>
                           </td>
                           <td className="px-4 sm:px-6 py-3.5 text-right">
-                            <span className={`inline-flex items-center gap-1.5 text-sm font-semibold ${
-                              product.stock === 0 ? 'text-red-500' : product.stock <= 5 ? 'text-amber-500' : 'text-emerald-600'
-                            }`}>
-                              {product.stock === 0 && <X className="w-3 h-3" />}
-                              {product.stock}
-                            </span>
+                            <button
+                              onClick={() => handleToggleActive(product.id, product.isActive)}
+                              disabled={togglingActiveId === product.id}
+                              title={product.isActive ? 'Aktiv — klicken zum Deaktivieren' : 'Inaktiv — klicken zum Aktivieren'}
+                              className={`relative inline-flex w-10 h-6 rounded-full transition-colors duration-300 ${
+                                product.isActive ? 'bg-emerald-500' : 'bg-gray-300'
+                              } ${togglingActiveId === product.id ? 'opacity-50' : ''}`}
+                            >
+                              <span className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white shadow transition-transform duration-300 ${
+                                product.isActive ? 'translate-x-4' : 'translate-x-0'
+                              }`} />
+                            </button>
                           </td>
                           <td className="px-4 sm:px-6 py-3.5 text-right">
                             <div className="flex items-center justify-end gap-1">
@@ -953,19 +989,21 @@ export default function AdminPage() {
                   <div className="bg-gray-50 rounded-2xl p-4 sm:p-5 border border-gray-100">
                     <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
                       <Euro className="w-4 h-5 text-emerald-500" />
-                      Preis (&euro;) <span className="text-red-400">*</span>
+                      Preis Brutto (&euro;) <span className="text-red-400">*</span>
                     </label>
                     <div className="relative">
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium">&euro;</span>
                       <input
                         type="number"
                         step="0.01"
-                        value={form.priceNet}
-                        onChange={(e) => setForm({ ...form, priceNet: e.target.value })}
+                        min="0"
+                        value={form.priceBrutto}
+                        onChange={(e) => setForm({ ...form, priceBrutto: e.target.value })}
                         className="w-full px-4 py-3 pl-9 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600/20 focus:border-emerald-600 transition-all"
                         placeholder="2.50"
                       />
                     </div>
+                    <p className="text-[11px] text-gray-400 mt-1.5">Preis den der Kunde sieht (inkl. MwSt.)</p>
                   </div>
 
                   <div className="bg-gray-50 rounded-2xl p-4 sm:p-5 border border-gray-100">
@@ -984,9 +1022,9 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                {/* Category & Stock */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="bg-gray-50 rounded-2xl p-4 sm:p-5 border border-gray-100">
+                {/* Category */}
+                <div className="bg-gray-50 rounded-2xl p-4 sm:p-5 border border-gray-100">
+                  <div className="bg-gray-50 rounded-2xl border-0 p-0">
                     <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
                       <Package className="w-4 h-5 text-emerald-500" />
                       Kategorie <span className="text-red-400">*</span>
@@ -1039,20 +1077,6 @@ export default function AdminPage() {
                         <option value="Drogerie">Drogerie</option>
                       </optgroup>
                     </select>
-                  </div>
-
-                  <div className="bg-gray-50 rounded-2xl p-4 sm:p-5 border border-gray-100">
-                    <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                      <Warehouse className="w-4 h-5 text-emerald-500" />
-                      Lagerbestand
-                    </label>
-                    <input
-                      type="number"
-                      value={form.stock}
-                      onChange={(e) => setForm({ ...form, stock: e.target.value })}
-                      className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600/20 focus:border-emerald-600 transition-all"
-                      placeholder="0"
-                    />
                   </div>
                 </div>
 

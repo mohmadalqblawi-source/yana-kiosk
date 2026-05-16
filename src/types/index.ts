@@ -8,6 +8,7 @@ export interface Product {
   image: string
   stock: number
   featured: boolean
+  isActive: boolean
   createdAt: string
   updatedAt: string
 }

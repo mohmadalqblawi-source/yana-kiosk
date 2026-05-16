@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search')
     const featured = searchParams.get('featured')
 
-    const where: Record<string, unknown> = {}
+    const where: Record<string, unknown> = { isActive: true }
 
     if (category) {
       where.category = category

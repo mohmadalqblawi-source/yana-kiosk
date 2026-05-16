@@ -1,13 +1,13 @@
 'use client'
 
 import { useState, useEffect, useMemo, Suspense } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Product } from '@/types'
 import ProductGrid from '@/components/ProductGrid'
 import { ProductCardSkeleton } from '@/components/SkeletonLoader'
 import { useLanguageStore } from '@/store/language'
-import { Search, X, UtensilsCrossed, Wine, Cigarette, Pill, Store, Snowflake } from 'lucide-react'
+import { Search, X, UtensilsCrossed, Wine, Cigarette, Pill, Store, Snowflake, ShieldAlert } from 'lucide-react'
 
 const inlineTranslations = {
   title: { de: 'Shop', en: 'Shop', fa: 'فروشگاه', ar: 'المتجر' },
@@ -28,6 +28,23 @@ const inlineTranslations = {
     shisha: { de: 'Shisha', en: 'Shisha', fa: 'قلیان', ar: 'شيشة' },
     vape: { de: 'Vape', en: 'Vape', fa: 'ویپ', ar: 'فيب' },
     eis: { de: 'Eis', en: 'Ice Cream', fa: 'بستنی', ar: 'آيس كريم' },
+  },
+  ageGate: {
+    title: { de: 'Altersnachweis', en: 'Age verification', fa: 'تأیید سن', ar: 'التحقق من العمر' },
+    body: {
+      de: 'In diesem Bereich werden Produkte angezeigt, die nur an Personen ab 18 Jahren abgegeben werden dürfen (z. B. Tabak, Shisha, E-Zigaretten). Bitte bestätigen Sie Ihr Alter.',
+      en: 'This section shows products that may only be sold to adults aged 18 or over (e.g. tobacco, shisha, e-cigarettes). Please confirm your age.',
+      fa: 'این بخش شامل کالاهایی است که فقط به افراد ۱۸ سال به بالا فروخته می‌شود. لطفاً سن خود را تأیید کنید.',
+      ar: 'يعرض هذا القسم منتجات لا يجوز بيعها إلا لمن بلغ ١٨ عاماً فأكثر. يرجى تأكيد عمرك.',
+    },
+    yes: { de: 'Ja, ich bin mindestens 18 Jahre alt', en: 'Yes, I am 18 or older', fa: 'بله، ۱۸ سال یا بیشتر دارم', ar: 'نعم، عمري ١٨ عاماً أو أكثر' },
+    no: { de: 'Nein, ich bin unter 18', en: 'No, I am under 18', fa: 'خیر، زیر ۱۸ سال هستم', ar: 'لا، عمري أقل من ١٨' },
+    hint: {
+      de: 'Mit „Ja“ bestätigen Sie für diese Browsersitzung, dass Sie volljährig sind. Sie können den Bereich danach normal nutzen.',
+      en: 'By choosing “Yes” you confirm for this browser session that you are of legal age. You can then browse this section as usual.',
+      fa: 'با انتخاب «بله» برای این جلسه مرورگر تأیید می‌کنید که بالای ۱۸ سال هستید.',
+      ar: 'باختيار «نعم» تؤكد لجلسة المتصفح هذه أنك بالغ. يمكنك بعدها تصفح القسم بشكل طبيعي.',
+    },
   },
 }
 
@@ -106,14 +123,43 @@ function getProductMainCategory(category: string): string {
   return 'sonstiges'
 }
 
+/** Main shop tabs that require 18+ confirmation (Jugendschutz / nicotine & tobacco). */
+const AGE_RESTRICTED_MAIN_IDS = new Set(['rauchen', 'shisha', 'vape'])
+const AGE_CONSENT_SESSION_KEY = 'yanakiosk_over18_smoking'
+
+function readAgeConsentSession(): boolean {
+  if (typeof window === 'undefined') return false
+  try {
+    return sessionStorage.getItem(AGE_CONSENT_SESSION_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+
+function writeAgeConsentSession() {
+  try {
+    sessionStorage.setItem(AGE_CONSENT_SESSION_KEY, '1')
+  } catch {
+    /* ignore */
+  }
+}
+
+type PendingAgeGate =
+  | { kind: 'main'; mainId: string }
+  | { kind: 'category'; mainId: string; subCategory: string }
+
 function ShopContent() {
   const searchParams = useSearchParams()
+  const router = useRouter()
   const { lang } = useLanguageStore()
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
-  const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '')
-  const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || '')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [selectedCategory, setSelectedCategory] = useState('')
   const [selectedMainCat, setSelectedMainCat] = useState('')
+  const [ageGateOpen, setAgeGateOpen] = useState(false)
+  const [pendingAgeGate, setPendingAgeGate] = useState<PendingAgeGate | null>(null)
+
   const tr = (key: string) => {
     const keys = key.split('.')
     let obj: any = inlineTranslations
@@ -124,6 +170,38 @@ function ShopContent() {
     if (obj && typeof obj === 'object' && lang in obj) return obj[lang]
     return key
   }
+
+  // Sync URL ?search= / ?category= (age-restricted categories need confirmation first).
+  useEffect(() => {
+    const search = searchParams.get('search') || ''
+    const cat = searchParams.get('category') || ''
+    setSearchQuery(search)
+
+    if (!cat) return
+
+    const mainId = getProductMainCategory(cat)
+    if (!AGE_RESTRICTED_MAIN_IDS.has(mainId)) {
+      setSelectedCategory(cat)
+      setSelectedMainCat(mainId !== 'sonstiges' ? mainId : '')
+      return
+    }
+
+    if (readAgeConsentSession()) {
+      setSelectedCategory(cat)
+      setSelectedMainCat(mainId)
+      return
+    }
+
+    setPendingAgeGate({ kind: 'category', mainId, subCategory: cat })
+    setAgeGateOpen(true)
+    setSelectedCategory('')
+    setSelectedMainCat('')
+
+    const qp = new URLSearchParams()
+    if (search) qp.set('search', search)
+    const next = qp.toString() ? `/shop?${qp}` : '/shop'
+    router.replace(next, { scroll: false })
+  }, [searchParams, router])
 
   useEffect(() => {
     async function fetchData() {
@@ -167,9 +245,41 @@ function ShopContent() {
     if (selectedMainCat === id) {
       setSelectedMainCat('')
       setSelectedCategory('')
-    } else {
-      setSelectedMainCat(id)
+      return
+    }
+    if (AGE_RESTRICTED_MAIN_IDS.has(id) && !readAgeConsentSession()) {
+      setPendingAgeGate({ kind: 'main', mainId: id })
+      setAgeGateOpen(true)
+      return
+    }
+    setSelectedMainCat(id)
+    setSelectedCategory('')
+  }
+
+  const confirmAgeGate = () => {
+    writeAgeConsentSession()
+    setAgeGateOpen(false)
+    const p = pendingAgeGate
+    setPendingAgeGate(null)
+    if (!p) return
+    if (p.kind === 'main') {
+      setSelectedMainCat(p.mainId)
       setSelectedCategory('')
+    } else {
+      setSelectedMainCat(p.mainId)
+      setSelectedCategory(p.subCategory)
+    }
+  }
+
+  const rejectAgeGate = () => {
+    setAgeGateOpen(false)
+    const wasUrl = pendingAgeGate?.kind === 'category'
+    setPendingAgeGate(null)
+    if (wasUrl) {
+      const s = searchParams.get('search')
+      const qp = new URLSearchParams()
+      if (s) qp.set('search', s)
+      router.replace(qp.toString() ? `/shop?${qp}` : '/shop', { scroll: false })
     }
   }
 
@@ -177,6 +287,61 @@ function ShopContent() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <AnimatePresence>
+        {ageGateOpen && (
+          <>
+            <motion.button
+              type="button"
+              aria-label="Close"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm"
+              onClick={rejectAgeGate}
+            />
+            <motion.div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="age-gate-title"
+              initial={{ opacity: 0, scale: 0.96, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.96, y: 12 }}
+              transition={{ type: 'spring', stiffness: 320, damping: 26 }}
+              className="fixed left-4 right-4 top-[20%] sm:top-[25%] z-[101] mx-auto max-w-md rounded-3xl border border-gray-200 bg-white p-6 shadow-2xl shadow-gray-900/20"
+            >
+              <div className="flex items-start gap-3 mb-4">
+                <div className="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center shrink-0 border border-red-100">
+                  <ShieldAlert className="w-6 h-6 text-red-600" aria-hidden />
+                </div>
+                <div>
+                  <h2 id="age-gate-title" className="text-lg font-bold text-gray-900">
+                    {tr('ageGate.title')}
+                  </h2>
+                  <p className="text-sm text-gray-600 mt-2 leading-relaxed">{tr('ageGate.body')}</p>
+                </div>
+              </div>
+              <p className="text-xs text-gray-500 mb-5 leading-relaxed">{tr('ageGate.hint')}</p>
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                <button
+                  type="button"
+                  onClick={confirmAgeGate}
+                  className="flex-1 py-3.5 rounded-2xl font-semibold text-sm text-white bg-gradient-to-r from-red-600 to-red-700 hover:shadow-lg hover:shadow-red-600/25 transition-all"
+                >
+                  {tr('ageGate.yes')}
+                </button>
+                <button
+                  type="button"
+                  onClick={rejectAgeGate}
+                  className="flex-1 py-3.5 rounded-2xl font-semibold text-sm text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors"
+                >
+                  {tr('ageGate.no')}
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}

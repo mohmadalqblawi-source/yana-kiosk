@@ -80,8 +80,7 @@ const inlineTranslations = {
   left: { de: 'übrig', en: 'left', fa: 'مانده', ar: 'متبقي' },
   soldOut: { de: 'Ausverkauft', en: 'Sold out', fa: 'تمام شد', ar: 'نفد' },
   add: { de: 'Hinzufügen', en: 'Add', fa: 'افزودن', ar: 'إضافة' },
-  gross: { de: 'brutto', en: 'gross', fa: 'ناخالص', ar: 'إجمالي' },
-  vat: { de: 'MwSt.', en: 'VAT', fa: 'مالیات', ar: 'ضريبة' },
+  inclVat: { de: 'inkl. MwSt.', en: 'incl. VAT', fa: 'شامل مالیات', ar: 'شامل الضريبة' },
 }
 
 export default function ProductCard({ product, index = 0 }: ProductCardProps) {
@@ -162,10 +161,6 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
               </span>
             )}
 
-            {/* VAT badge */}
-            <span className="absolute bottom-3 left-3 px-2 py-0.5 bg-white/80 backdrop-blur-sm text-[10px] font-medium text-gray-500 rounded-md">
-              {tr('vat')} {product.vatRate}%
-            </span>
           </div>
 
           {/* Info */}
@@ -187,7 +182,7 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
             <div className="flex items-center justify-between mt-3">
               <div>
                 <span className="text-lg font-bold text-gray-900">{formatPrice(gross)}</span>
-                <span className="text-xs text-gray-400 ml-1">{tr('gross')}</span>
+                <span className="text-[10px] text-gray-400 ml-1 block leading-none">{tr('inclVat')}</span>
               </div>
               <motion.button
                 whileHover={{ scale: 1.02 }}

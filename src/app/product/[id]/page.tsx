@@ -10,7 +10,7 @@ import { useCartStore } from '@/store/cart'
 import { useUIStore } from '@/store/ui'
 import { useLanguageStore } from '@/store/language'
 import { ProductDetailSkeleton } from '@/components/SkeletonLoader'
-import { ShoppingBag, ArrowLeft, Minus, Plus, Package, Ruler, Tag } from 'lucide-react'
+import { ShoppingBag, ArrowLeft, Minus, Plus, Package, Tag } from 'lucide-react'
 
 const inlineTranslations = {
   backToShop: { de: 'Zurück zum Shop', en: 'Back to Shop', fa: 'بازگشت به فروشگاه', ar: 'العودة إلى المتجر' },
@@ -18,10 +18,7 @@ const inlineTranslations = {
   onlyLeft: { de: 'Nur noch', en: 'Only', fa: 'فقط', ar: 'تبقى فقط' },
   soldOut: { de: 'Ausverkauft', en: 'Sold out', fa: 'تمام شد', ar: 'نفد من المخزون' },
   featured: { de: 'Empfohlen', en: 'Featured', fa: 'پیشنهاد ویژه', ar: 'مميز' },
-  gross: { de: 'brutto', en: 'gross', fa: 'ناخالص', ar: 'إجمالي' },
-  netPrice: { de: 'Nettopreis', en: 'Net Price', fa: 'قیمت خالص', ar: 'السعر الصافي' },
-  vatLabel: { de: 'MwSt.', en: 'VAT', fa: 'مالیات', ar: 'ضريبة' },
-  grossPrice: { de: 'Bruttopreis', en: 'Gross Price', fa: 'قیمت ناخالص', ar: 'السعر الإجمالي' },
+  inclVat: { de: 'inkl. MwSt.', en: 'incl. VAT', fa: 'شامل مالیات', ar: 'شامل الضريبة' },
   inStock: { de: 'Auf Lager', en: 'In Stock', fa: 'موجود', ar: 'متوفر' },
   qtyLeft: { de: 'auf Lager', en: 'in stock', fa: 'موجود در انبار', ar: 'متبقي في المخزون' },
   notAvailable: { de: 'Derzeit nicht verfügbar', en: 'Currently unavailable', fa: 'در حال حاضر موجود نیست', ar: 'غير متاح حالياً' },
@@ -90,7 +87,7 @@ export default function ProductDetailPage() {
     )
   }
 
-  const { net, vat, gross } = calculateVAT(product.priceNet, product.vatRate)
+  const { gross } = calculateVAT(product.priceNet, product.vatRate)
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -164,25 +161,8 @@ export default function ProductDetailPage() {
 
           {/* Price Section */}
           <div className="bg-gradient-to-br from-emerald-50 to-yellow-50 rounded-2xl p-6 mb-6 border border-emerald-100">
-            <div className="flex items-baseline gap-2 mb-4">
-              <span className="text-4xl font-bold text-gray-900">{formatPrice(gross)}</span>
-              <span className="text-gray-500 font-medium">{tr('gross')}</span>
-            </div>
-
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between items-center py-2 border-b border-emerald-100/50">
-                <span className="text-gray-600">{tr('netPrice')}</span>
-                <span className="font-medium text-gray-900">{formatPrice(net)}</span>
-              </div>
-              <div className="flex justify-between items-center py-2 border-b border-emerald-100/50">
-                <span className="text-gray-600">{tr('vatLabel')} ({product.vatRate}%)</span>
-                <span className="font-medium text-emerald-600">{formatPrice(vat)}</span>
-              </div>
-              <div className="flex justify-between items-center py-2">
-                <span className="text-gray-600">{tr('grossPrice')}</span>
-                <span className="font-bold text-gray-900">{formatPrice(gross)}</span>
-              </div>
-            </div>
+            <span className="text-4xl font-bold text-gray-900">{formatPrice(gross)}</span>
+            <p className="text-sm text-gray-500 mt-1">{tr('inclVat')}</p>
           </div>
 
           {/* Description */}
@@ -241,10 +221,6 @@ export default function ProductDetailPage() {
             <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">
               <Tag className="w-3 h-3" />
               {product.category}
-            </span>
-            <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">
-              <Ruler className="w-3 h-3" />
-              {tr('vatLabel')} {product.vatRate}%
             </span>
           </div>
         </motion.div>

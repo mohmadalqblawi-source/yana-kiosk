@@ -38,17 +38,17 @@ export default function Footer() {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-8">
           {/* Brand */}
           <div className="md:col-span-1">
-            <Link href="/" className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 rounded-lg overflow-hidden shrink-0">
+            <Link href="/" className="flex items-center gap-3 mb-4">
+              <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0 ring-1 ring-white/10 bg-white">
                 <Image
                   src="/logo-new.png"
                   alt="YaNa Kiosk"
-                  width={32}
-                  height={32}
-                  className="w-full h-full object-contain"
+                  width={56}
+                  height={56}
+                  className="w-full h-full object-contain p-1"
                 />
               </div>
-              <span className="text-lg font-bold text-white">YaNa Kiosk</span>
+              <span className="text-xl font-bold text-white">YaNa Kiosk</span>
             </Link>
             <p className="text-sm text-gray-400 leading-relaxed">
               {t('tagline')}

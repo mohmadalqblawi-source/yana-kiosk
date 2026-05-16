@@ -1,1 +1,1 @@
-const { PrismaClient } = require(\"@prisma/client\");
+const { PrismaClient } = require('@prisma/client')

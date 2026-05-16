@@ -32,7 +32,7 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
     <>
       <Navbar />
       <StoreClosedBanner />
-      <main className="min-h-screen pt-16 md:pt-20">
+      <main className="min-h-screen pt-[4.6rem] md:pt-[5.35rem]">
         {children}
       </main>
       <Footer />

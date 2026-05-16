@@ -54,21 +54,22 @@ export default function Navbar() {
         }`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16 md:h-20">
-            <Link href="/" className="flex items-center gap-3 group">
+          <div className="flex items-center justify-between h-[4.6rem] md:h-[5.35rem]">
+            <Link href="/" className="flex items-center gap-3 md:gap-3.5 group">
               <motion.div
-                whileHover={{ rotate: -3, scale: 1.08 }}
-                className="w-12 h-12 rounded-xl overflow-hidden shrink-0 shadow-lg shadow-green-500/20 relative bg-white"
+                whileHover={{ rotate: -3, scale: 1.05 }}
+                className="w-16 h-16 md:w-[4.75rem] md:h-[4.75rem] rounded-xl overflow-hidden shrink-0 shadow-lg shadow-green-500/25 relative bg-white ring-1 ring-gray-100"
               >
                 <Image
                   src="/logo-new.png"
                   alt="YaNa Kiosk"
                   fill
-                  className="object-contain p-0.5"
-                  sizes="48px"
+                  priority
+                  className="object-contain p-1 md:p-1.5"
+                  sizes="(max-width: 768px) 64px, 76px"
                 />
               </motion.div>
-              <span className="text-xl font-bold bg-gradient-to-r from-green-700 to-green-800 bg-clip-text text-transparent">
+              <span className="text-xl md:text-2xl font-bold bg-gradient-to-r from-green-700 to-green-800 bg-clip-text text-transparent">
                 YaNa Kiosk
               </span>
             </Link>
@@ -179,7 +180,7 @@ export default function Navbar() {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="fixed top-16 left-0 right-0 z-40 bg-white/95 backdrop-blur-xl border-b border-gray-200 md:hidden"
+            className="fixed top-[4.6rem] left-0 right-0 z-40 bg-white/95 backdrop-blur-xl border-b border-gray-200 md:hidden"
           >
             <div className="px-4 py-4 space-y-2">
               {links.map((link) => (

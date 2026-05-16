@@ -15,10 +15,7 @@ import {
   ListOrdered,
   Store,
   ChevronDown,
-  Settings,
   Bell,
-  Search,
-  Users,
 } from 'lucide-react'
 
 const adminLinks = [
@@ -107,13 +104,13 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         <div className="p-5 border-b border-gray-100">
           <div className="flex items-center justify-between">
             <Link href="/admin" className="flex items-center gap-3 group">
-              <div className="relative w-10 h-10 rounded-xl overflow-hidden shadow-md shadow-emerald-500/10 group-hover:shadow-emerald-500/20 transition-all">
+              <div className="relative w-[3.25rem] h-[3.25rem] rounded-xl overflow-hidden shadow-md shadow-emerald-500/15 group-hover:shadow-emerald-500/25 transition-all bg-white ring-1 ring-gray-100">
                 <Image
                   src="/logo-new.png"
                   alt="YaNa Kiosk"
-                  width={40}
-                  height={40}
-                  className="w-full h-full object-cover"
+                  width={52}
+                  height={52}
+                  className="w-full h-full object-contain p-1"
                 />
               </div>
               <div className="flex flex-col">

@@ -55,13 +55,14 @@ export default function AdminLoginPage() {
           <Link href="/" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-emerald-600 transition-colors mb-6">
             <ArrowLeft className="w-4 h-4" /> Zurück zum Shop
           </Link>
-          <div className="w-16 h-16 rounded-2xl overflow-hidden mx-auto mb-4 shadow-xl shadow-emerald-600/20">
+          <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-2xl overflow-hidden mx-auto mb-5 shadow-xl shadow-emerald-600/25 ring-2 ring-white bg-white">
             <Image
               src="/logo-new.png"
               alt="YaNa Kiosk"
-              width={64}
-              height={64}
-              className="w-full h-full object-contain"
+              width={128}
+              height={128}
+              className="w-full h-full object-contain p-2"
+              priority
             />
           </div>
           <h1 className="text-2xl font-bold text-gray-900">Admin Login</h1>

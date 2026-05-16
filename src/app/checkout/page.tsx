@@ -52,6 +52,13 @@ const inlineTranslations = {
   stripeError: { de: 'Fehler beim Laden des Zahlungsformulars', en: 'Error loading payment form', fa: 'خطا در بارگذاری فرم پرداخت', ar: 'خطأ في تحميل نموذج الدفع' },
   fillDataFirst: { de: 'Bitte füllen Sie Name und E-Mail aus', en: 'Please fill in name and email', fa: 'لطفاً نام و ایمیل را پر کنید', ar: 'يرجى ملء الاسم والبريد الإلكتروني' },
   retry: { de: 'Erneut versuchen', en: 'Retry', fa: 'تلاش مجدد', ar: 'إعادة المحاولة' },
+  shopClosedTitle: { de: 'Shop geschlossen', en: 'Shop closed', fa: 'فروشگاه بسته است', ar: 'المتجر مغلق' },
+  shopClosedDesc: {
+    de: 'Der Online-Shop nimmt derzeit keine Bestellungen entgegen. Sie können weiter stöbern.',
+    en: 'The online shop is not taking orders right now. You can still browse.',
+    fa: 'فروشگاه آنلاین فعلاً سفارش نمی‌پذیرد. می‌توانید مرور کنید.',
+    ar: 'المتجر لا يستقبل طلبات حالياً. يمكنك تصفح المنتجات.',
+  },
 }
 
 export default function CheckoutPage() {
@@ -98,12 +105,51 @@ export default function CheckoutPage() {
   const [paymentError, setPaymentError] = useState<string | null>(null)
   const [loadingPayment, setLoadingPayment] = useState(false)
 
+  const [shopAcceptsOrders, setShopAcceptsOrders] = useState(true)
+  const [shopStatusLoaded, setShopStatusLoaded] = useState(false)
+
+  const prevFormKey = useRef('')
+
+  useEffect(() => {
+    let cancelled = false
+    async function loadShopStatus() {
+      try {
+        const res = await fetch('/api/store-status')
+        const data = await res.json()
+        if (!cancelled) {
+          setShopAcceptsOrders(data.isOpen !== false)
+          setShopStatusLoaded(true)
+        }
+      } catch {
+        if (!cancelled) {
+          setShopAcceptsOrders(true)
+          setShopStatusLoaded(true)
+        }
+      }
+    }
+    loadShopStatus()
+    const onFocus = () => loadShopStatus()
+    window.addEventListener('focus', onFocus)
+    return () => {
+      cancelled = true
+      window.removeEventListener('focus', onFocus)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!shopAcceptsOrders) {
+      setClientSecret(null)
+      prevFormKey.current = ''
+    }
+  }, [shopAcceptsOrders])
+
   const { vat7, vat19 } = getVatBreakdown()
   const totalNet = getTotalNet()
   const totalVat = getTotalVat()
   const totalGross = getTotalGross()
 
   const createPaymentIntent = useCallback(async () => {
+    if (!shopAcceptsOrders || !shopStatusLoaded) return
     if (!formData.customerName || !formData.customerEmail || items.length === 0) return
     setLoadingPayment(true)
     setPaymentError(null)
@@ -128,18 +174,18 @@ export default function CheckoutPage() {
     } finally {
       setLoadingPayment(false)
     }
-  }, [formData.customerName, formData.customerEmail, totalGross, shippingCost, items.length, addToast])
+  }, [shopAcceptsOrders, shopStatusLoaded, formData.customerName, formData.customerEmail, totalGross, shippingCost, items.length, addToast])
 
   // Auto-create payment intent when customer data is complete
-  const prevFormKey = useRef('')
   const formKey = `${formData.customerName}|${formData.customerEmail}|${formData.shippingMethod}|${items.length}|${totalGross}`
   
   useEffect(() => {
+    if (!shopAcceptsOrders || !shopStatusLoaded) return
     if (formData.customerName && formData.customerEmail && items.length > 0 && !clientSecret && formKey !== prevFormKey.current) {
       prevFormKey.current = formKey
       createPaymentIntent()
     }
-  }, [formKey, formData.customerName, formData.customerEmail, items.length, clientSecret, createPaymentIntent])
+  }, [shopAcceptsOrders, shopStatusLoaded, formKey, formData.customerName, formData.customerEmail, items.length, clientSecret, createPaymentIntent])
 
   const handleOrderSuccess = () => {
     setSubmitted(true)
@@ -394,6 +440,18 @@ export default function CheckoutPage() {
                   <p className="text-sm text-red-600 font-medium">{tr('stripeError')}</p>
                   <p className="text-xs text-gray-400 mt-1">NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY fehlt</p>
                 </div>
+              ) : shopStatusLoaded && !shopAcceptsOrders ? (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 p-6 text-center">
+                  <AlertCircle className="w-10 h-10 text-amber-600 mx-auto mb-3" />
+                  <p className="text-sm font-semibold text-amber-900">{tr('shopClosedTitle')}</p>
+                  <p className="text-xs text-amber-800/90 mt-2">{tr('shopClosedDesc')}</p>
+                  <Link
+                    href="/shop"
+                    className="inline-flex mt-4 text-sm font-medium text-amber-900 underline underline-offset-2"
+                  >
+                    {tr('continueShopping')}
+                  </Link>
+                </div>
               ) : !customerDataReady ? (
                 <div className="flex items-center justify-center py-8 text-sm text-gray-500">
                   <AlertCircle className="w-5 h-5 mr-2 text-yellow-500" />
@@ -424,6 +482,7 @@ export default function CheckoutPage() {
                     setSubmitting={setSubmitting}
                     totalWithShipping={totalWithShipping}
                     clientSecret={clientSecret}
+                    shopAcceptsOrders={shopAcceptsOrders}
                   />
                 </Elements>
               ) : (
@@ -503,6 +562,7 @@ function CheckoutFormContent({
   setSubmitting,
   totalWithShipping,
   clientSecret,
+  shopAcceptsOrders,
 }: {
   formData: { customerName: string; customerEmail: string; customerPhone: string; customerAddress?: string; shippingMethod: string }
   onOrderSuccess: () => void
@@ -510,6 +570,7 @@ function CheckoutFormContent({
   setSubmitting: (v: boolean) => void
   totalWithShipping: number
   clientSecret: string
+  shopAcceptsOrders: boolean
 }) {
   const stripe = useStripe()
   const elements = useElements()
@@ -531,6 +592,7 @@ function CheckoutFormContent({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!shopAcceptsOrders) return
     if (!stripe || !elements) return
     setSubmitting(true)
     try {
@@ -595,7 +657,7 @@ function CheckoutFormContent({
         whileHover={{ scale: 1.01 }}
         whileTap={{ scale: 0.99 }}
         type="submit"
-        disabled={submitting || !stripe || !elements}
+        disabled={submitting || !stripe || !elements || !shopAcceptsOrders}
         className="w-full py-4 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-2xl font-bold text-base hover:shadow-lg hover:shadow-emerald-600/20 transition-all flex items-center justify-center gap-2 disabled:opacity-70"
       >
         {submitting ? (

@@ -32,6 +32,7 @@ export interface StoreSettings {
   address: string
   phone: string
   email: string
+  isOpen: boolean
 }
 
 export interface Order {

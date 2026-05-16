@@ -68,4 +68,6 @@ model StoreSetting {
   address String
   phone String
   email String
+  /// When false, storefront blocks checkout / payments (browse-only).
+  isOpen Boolean @default(true)
 }

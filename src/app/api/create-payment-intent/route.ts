@@ -1,7 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { isStoreOpen } from '@/lib/store-open'
 
 export async function POST(request: NextRequest) {
   try {
+    if (!(await isStoreOpen())) {
+      return NextResponse.json(
+        { error: 'Der Shop ist derzeit geschlossen. Zahlungen sind nicht möglich.' },
+        { status: 403 }
+      )
+    }
+
     const stripeSecretKey = process.env.STRIPE_SECRET_KEY
 
     if (!stripeSecretKey) {

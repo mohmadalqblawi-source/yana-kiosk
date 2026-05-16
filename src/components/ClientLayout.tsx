@@ -7,6 +7,7 @@ import Navbar from './Navbar'
 import Footer from './Footer'
 import CartSidebar from './CartSidebar'
 import ToastContainer from './ToastContainer'
+import StoreClosedBanner from './StoreClosedBanner'
 
 export default function ClientLayout({ children }: { children: ReactNode }) {
   const { lang } = useLanguageStore()
@@ -30,6 +31,7 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
   return (
     <>
       <Navbar />
+      <StoreClosedBanner />
       <main className="min-h-screen pt-16 md:pt-20">
         {children}
       </main>

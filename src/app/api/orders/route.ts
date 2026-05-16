@@ -1,8 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { isStoreOpen } from '@/lib/store-open'
 
 export async function POST(request: NextRequest) {
   try {
+    if (!(await isStoreOpen())) {
+      return NextResponse.json(
+        { error: 'Der Shop ist derzeit geschlossen. Bestellungen sind nicht möglich.' },
+        { status: 403 }
+      )
+    }
+
     const body = await request.json()
     const { customerName, customerEmail, customerPhone, customerAddress, shippingMethod, items } = body
 

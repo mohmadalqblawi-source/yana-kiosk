@@ -21,6 +21,7 @@ export async function GET(request: NextRequest) {
           address: process.env.NEXT_PUBLIC_STORE_ADDRESS || '',
           phone: process.env.NEXT_PUBLIC_STORE_PHONE || '',
           email: process.env.NEXT_PUBLIC_STORE_EMAIL || '',
+          isOpen: true,
         },
       })
     }
@@ -43,17 +44,19 @@ export async function PUT(request: NextRequest) {
     const settings = await prisma.storeSetting.upsert({
       where: { id: 'default' },
       update: {
-        name: body.name,
-        address: body.address,
-        phone: body.phone,
-        email: body.email,
+        ...(typeof body.name === 'string' && { name: body.name }),
+        ...(typeof body.address === 'string' && { address: body.address }),
+        ...(typeof body.phone === 'string' && { phone: body.phone }),
+        ...(typeof body.email === 'string' && { email: body.email }),
+        ...(typeof body.isOpen === 'boolean' && { isOpen: body.isOpen }),
       },
       create: {
         id: 'default',
-        name: body.name,
-        address: body.address,
-        phone: body.phone,
-        email: body.email,
+        name: body.name ?? process.env.NEXT_PUBLIC_STORE_NAME ?? 'YaNa Kiosk',
+        address: body.address ?? process.env.NEXT_PUBLIC_STORE_ADDRESS ?? '',
+        phone: body.phone ?? process.env.NEXT_PUBLIC_STORE_PHONE ?? '',
+        email: body.email ?? process.env.NEXT_PUBLIC_STORE_EMAIL ?? '',
+        isOpen: typeof body.isOpen === 'boolean' ? body.isOpen : true,
       },
     })
 

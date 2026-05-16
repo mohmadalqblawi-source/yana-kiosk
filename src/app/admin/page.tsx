@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Product } from '@/types'
+import { Product, StoreSettings } from '@/types'
 import { formatPrice, calculateVAT } from '@/lib/utils'
 import { useUIStore } from '@/store/ui'
 import { useAdminStore } from '@/store/admin'
@@ -12,6 +12,7 @@ import {
   Type, Euro, Tag, Warehouse, CheckSquare, Square,
   ChevronDown, ChevronUp, Camera, Store, Grid3X3, List,
   TrendingUp, Percent, RefreshCw, Layers, Star,
+  Power,
 } from 'lucide-react'
 
 interface ProductForm {
@@ -50,7 +51,31 @@ export default function AdminPage() {
   const [showImageField, setShowImageField] = useState(false)
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [activeTab, setActiveTab] = useState<'overview' | 'products'>('overview')
+  const [storeSettings, setStoreSettings] = useState<StoreSettings | null>(null)
+  const [settingsLoading, setSettingsLoading] = useState(false)
+  const [toggleSaving, setToggleSaving] = useState(false)
 
+  const fetchStoreSettings = useCallback(async (authToken: string) => {
+    setSettingsLoading(true)
+    try {
+      const res = await fetch('/api/admin/settings', {
+        headers: { Authorization: `Bearer ${authToken}` },
+      })
+      if (!res.ok) return
+      const data = await res.json()
+      setStoreSettings({
+        name: data.name ?? '',
+        address: data.address ?? '',
+        phone: data.phone ?? '',
+        email: data.email ?? '',
+        isOpen: data.isOpen !== false,
+      })
+    } catch {
+      /* ignore */
+    } finally {
+      setSettingsLoading(false)
+    }
+  }, [])
   const fetchProducts = useCallback(async (authToken: string) => {
     if (!authToken) return
     try {
@@ -83,8 +108,11 @@ export default function AdminPage() {
   }, [])
 
   useEffect(() => {
-    if (token) fetchProducts(token)
-  }, [token, fetchProducts])
+    if (token) {
+      fetchProducts(token)
+      fetchStoreSettings(token)
+    }
+  }, [token, fetchProducts, fetchStoreSettings])
 
   const filteredProducts = useMemo(() => {
     if (!searchQuery) return products
@@ -173,6 +201,38 @@ export default function AdminPage() {
     }
   }
 
+  const handleStoreOpenToggle = async (nextOpen: boolean) => {
+    if (!token || !storeSettings) return
+    setToggleSaving(true)
+    try {
+      const res = await fetch('/api/admin/settings', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ ...storeSettings, isOpen: nextOpen }),
+      })
+      if (!res.ok) throw new Error('save failed')
+      const data = await res.json()
+      setStoreSettings({
+        name: data.name ?? '',
+        address: data.address ?? '',
+        phone: data.phone ?? '',
+        email: data.email ?? '',
+        isOpen: data.isOpen !== false,
+      })
+      addToast(
+        nextOpen ? 'Shop ist online — Bestellungen möglich' : 'Shop ist offline — keine neuen Bestellungen',
+        'success'
+      )
+    } catch {
+      addToast('Shop-Status konnte nicht gespeichert werden', 'error')
+    } finally {
+      setToggleSaving(false)
+    }
+  }
+
   const handleDelete = async (id: string, name: string) => {
     if (!window.confirm(`Sind Sie sicher, dass Sie "${name}" löschen möchten?`)) return
 
@@ -191,6 +251,66 @@ export default function AdminPage() {
 
   return (
     <div className="space-y-6">
+      {/* Shop online / offline */}
+      {settingsLoading && token ? (
+        <div className="h-[88px] bg-gray-100 rounded-2xl animate-pulse border border-gray-100" aria-hidden />
+      ) : storeSettings ? (
+        <motion.div
+          initial={{ opacity: 0, y: -6 }}
+          animate={{ opacity: 1, y: 0 }}
+          className={`rounded-2xl border p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
+            storeSettings.isOpen
+              ? 'bg-white border-emerald-100 shadow-sm shadow-emerald-500/5'
+              : 'bg-gray-50 border-gray-200'
+          }`}
+        >
+          <div className="flex items-start gap-4">
+            <div
+              className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${
+                storeSettings.isOpen ? 'bg-emerald-100' : 'bg-gray-200'
+              }`}
+            >
+              <Power
+                className={`w-6 h-6 ${storeSettings.isOpen ? 'text-emerald-600' : 'text-gray-500'}`}
+              />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-gray-900">Shop-Status</p>
+              <p className="text-xs text-gray-500 mt-0.5 max-w-xl">
+                {storeSettings.isOpen
+                  ? 'Online — Kunden können Produkte kaufen und zur Kasse gehen.'
+                  : 'Offline — der Shop wird angezeigt, aber neue Bestellungen und Zahlungen sind gesperrt.'}
+              </p>
+              <p className="text-[11px] font-semibold mt-2 uppercase tracking-wide">
+                <span className={storeSettings.isOpen ? 'text-emerald-600' : 'text-gray-500'}>
+                  {storeSettings.isOpen ? '● Online' : '● Offline'}
+                </span>
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 sm:flex-col sm:items-end sm:gap-2">
+            <span className="text-xs text-gray-500 hidden sm:inline">Schalter</span>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={storeSettings.isOpen}
+              aria-busy={toggleSaving}
+              disabled={toggleSaving}
+              onClick={() => handleStoreOpenToggle(!storeSettings.isOpen)}
+              className={`relative w-[52px] h-8 rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 disabled:opacity-60 ${
+                storeSettings.isOpen ? 'bg-emerald-500' : 'bg-gray-300'
+              }`}
+            >
+              <span
+                className={`absolute top-1 left-1 h-6 w-6 rounded-full bg-white shadow transition-transform ${
+                  storeSettings.isOpen ? 'translate-x-5' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </div>
+        </motion.div>
+      ) : null}
+
       {/* Dashboard Tabs */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>

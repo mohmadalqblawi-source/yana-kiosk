@@ -998,10 +998,8 @@ export default function AdminPage() {
                     >
                       <option value="">-- Kategorie auswählen --</option>
                       <optgroup label="🥗 Lebensmittel">
-                        <option value="Schokoladenriegel">Schokoladenriegel</option>
-                        <option value="Sweets & Snacks">Sweets & Snacks</option>
-                        <option value="Chips">Chips</option>
-                        <option value="Fruchtgummi & Lakritz">Fruchtgummi & Lakritz</option>
+                        <option value="Süße Snacks">Süße Snacks</option>
+                        <option value="Salzige Snacks">Salzige Snacks</option>
                         <option value="Lebensmittel">Lebensmittel</option>
                         <option value="Kaugummi">Kaugummi</option>
                         <option value="Kinderartikel">Kinderartikel</option>

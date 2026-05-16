@@ -56,7 +56,7 @@ const mainCategories = [
     bgColor: 'bg-emerald-50',
     textColor: 'text-emerald-700',
     subCategories: [
-      'Schokoladenriegel', 'Sweets & Snacks', 'Chips', 'Fruchtgummi & Lakritz',
+      'Süße Snacks', 'Salzige Snacks',
       'Lebensmittel', 'Kaugummi', 'Kinderartikel'
     ],
   },

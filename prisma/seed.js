@@ -29,7 +29,18 @@ async function main() {
   const existingCount = await prisma.product.count();
   if (existingCount > 0) {
     console.log('? Products already exist (' + existingCount + '), skipping...');
-    await upsertSettings();
+    await prisma.storeSetting.upsert({
+      where: { id: 'default' },
+      update: {},
+      create: {
+        id: 'default',
+        name: process.env.NEXT_PUBLIC_STORE_NAME || 'YaNa Kiosk',
+        address: process.env.NEXT_PUBLIC_STORE_ADDRESS || '',
+        phone: process.env.NEXT_PUBLIC_STORE_PHONE || '',
+        email: process.env.NEXT_PUBLIC_STORE_EMAIL || '',
+        isOpen: true,
+      },
+    });
     return;
   }
 

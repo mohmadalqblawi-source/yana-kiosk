@@ -9,7 +9,7 @@ import { useCartStore } from '@/store/cart'
 import { useUIStore } from '@/store/ui'
 import { useLanguageStore } from '@/store/language'
 import { formatPrice, calculateVAT } from '@/lib/utils'
-import { ArrowLeft, Check, CreditCard, ShoppingBag, Loader2, Truck, Lock, AlertCircle, Car } from 'lucide-react'
+import { ArrowLeft, Check, CreditCard, ShoppingBag, Loader2, Truck, Lock, AlertCircle, Car, MapPin, Navigation } from 'lucide-react'
 
 const inlineTranslations = {
   backToCart: { de: 'Zurück zum Warenkorb', en: 'Back to Cart', fa: 'بازگشت به سبد خرید', ar: 'العودة إلى سلة التسوق' },
@@ -52,6 +52,14 @@ const inlineTranslations = {
   stripeError: { de: 'Fehler beim Laden des Zahlungsformulars', en: 'Error loading payment form', fa: 'خطا در بارگذاری فرم پرداخت', ar: 'خطأ في تحميل نموذج الدفع' },
   fillDataFirst: { de: 'Bitte füllen Sie Name und E-Mail aus', en: 'Please fill in name and email', fa: 'لطفاً نام و ایمیل را پر کنید', ar: 'يرجى ملء الاسم والبريد الإلكتروني' },
   retry: { de: 'Erneut versuchen', en: 'Retry', fa: 'تلاش مجدد', ar: 'إعادة المحاولة' },
+  deliveryAddressLabel: { de: 'Lieferadresse', en: 'Delivery address', fa: 'آدرس تحویل', ar: 'عنوان التوصيل' },
+  deliveryAddressHint: { de: 'Straße, Hausnr., PLZ, Ort', en: 'Street, No., ZIP, City', fa: 'خیابان، شماره، کد پستی، شهر', ar: 'الشارع، الرقم، الرمز البريدي، المدينة' },
+  deliveryAddressPlaceholder: { de: 'z.B. Musterstraße 12, 22889 Hamburg', en: 'e.g. Example St 12, 22889 Hamburg', fa: 'مثال: خیابان نمونه ۱۲، ۲۲۸۸۹ هامبورگ', ar: 'مثال: شارع نموذجي 12، 22889 هامبورغ' },
+  calculateBtn: { de: 'Liefergebühr berechnen', en: 'Calculate delivery fee', fa: 'محاسبه هزینه تحویل', ar: 'احسب رسوم التوصيل' },
+  outOfRange: { de: 'Leider liefern wir nicht in Ihre Region', en: 'Sorry, we do not deliver to your area', fa: 'متأسفانه به منطقه شما تحویل نمی‌دهیم', ar: 'عذراً، لا نوصل إلى منطقتك' },
+  minOrderError: { de: 'Mindestbestellwert für Ihre Zone:', en: 'Minimum order value for your zone:', fa: 'حداقل سفارش برای منطقه شما:', ar: 'الحد الأدنى للطلب في منطقتك:' },
+  zoneInfo: { de: 'Entfernung: {km} km — Liefergebühr: {fee} — Mindestbestellwert: {min}', en: 'Distance: {km} km — Delivery fee: {fee} — Min. order: {min}', fa: 'فاصله: {km} کیلومتر — هزینه تحویل: {fee} — حداقل سفارش: {min}', ar: 'المسافة: {km} كم — رسوم التوصيل: {fee} — الحد الأدنى: {min}' },
+  enterAddressFirst: { de: 'Bitte geben Sie Ihre Lieferadresse ein und berechnen Sie die Liefergebühr.', en: 'Please enter your delivery address and calculate the delivery fee.', fa: 'لطفاً آدرس تحویل را وارد کنید و هزینه را محاسبه کنید.', ar: 'يرجى إدخال عنوان التوصيل وحساب الرسوم.' },
   shopClosedTitle: { de: 'Shop geschlossen', en: 'Shop closed', fa: 'فروشگاه بسته است', ar: 'المتجر مغلق' },
   shopClosedDesc: {
     de: 'Der Online-Shop nimmt derzeit keine Bestellungen entgegen. Sie können weiter stöbern.',
@@ -98,7 +106,16 @@ export default function CheckoutPage() {
     shippingMethod: 'pickup' as 'pickup' | 'dhl' | 'hermes' | 'delivery',
   })
 
-  const shippingCost = formData.shippingMethod === 'pickup' ? 0 : formData.shippingMethod === 'delivery' ? 3.00 : 4.90
+  // ── Delivery zone (distance-based) — must be before shippingCost ──────────
+  interface DeliveryZoneInfo { distanceKm: number; fee: number; minOrder: number }
+  const [deliveryZone, setDeliveryZone] = useState<DeliveryZoneInfo | null>(null)
+  const [deliveryZoneError, setDeliveryZoneError] = useState<string | null>(null)
+  const [calculatingZone, setCalculatingZone] = useState(false)
+
+  // For delivery: use calculated zone fee; 0 while zone not yet calculated (intent won't be created until zone ready)
+  const shippingCost = formData.shippingMethod === 'pickup' ? 0
+    : formData.shippingMethod === 'delivery' ? (deliveryZone?.fee ?? 0)
+    : 4.90
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [clientSecret, setClientSecret] = useState<string | null>(null)
@@ -143,6 +160,39 @@ export default function CheckoutPage() {
     }
   }, [shopAcceptsOrders])
 
+  // Reset zone state whenever the user switches away from delivery
+  useEffect(() => {
+    if (formData.shippingMethod !== 'delivery') {
+      setDeliveryZone(null)
+      setDeliveryZoneError(null)
+    }
+  }, [formData.shippingMethod])
+
+  const calculateZone = useCallback(async () => {
+    const addr = formData.customerAddress?.trim()
+    if (!addr) return
+    setCalculatingZone(true)
+    setDeliveryZoneError(null)
+    setDeliveryZone(null)
+    setClientSecret(null)
+    prevFormKey.current = ''
+    try {
+      const res = await fetch('/api/delivery-zone', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ address: addr }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setDeliveryZoneError(data.error || 'Fehler bei der Berechnung'); return }
+      if (data.outOfRange) { setDeliveryZoneError(tr('outOfRange')); return }
+      setDeliveryZone({ distanceKm: data.distanceKm, fee: data.fee, minOrder: data.minOrder })
+    } catch {
+      setDeliveryZoneError('Fehler bei der Entfernungsberechnung. Bitte erneut versuchen.')
+    } finally {
+      setCalculatingZone(false)
+    }
+  }, [formData.customerAddress])
+
   const { vat7, vat19 } = getVatBreakdown()
   const totalNet = getTotalNet()
   const totalGross = getTotalGross()
@@ -175,16 +225,23 @@ export default function CheckoutPage() {
     }
   }, [shopAcceptsOrders, shopStatusLoaded, formData.customerName, formData.customerEmail, totalGross, shippingCost, items.length, addToast])
 
+  // Min order check for delivery
+  const minOrderNotMet = formData.shippingMethod === 'delivery' && deliveryZone !== null && totalGross < deliveryZone.minOrder
+  // Delivery is ready to pay when zone is confirmed, in range, and cart meets minimum
+  const deliveryReady = formData.shippingMethod !== 'delivery'
+    || (deliveryZone !== null && !deliveryZoneError && !minOrderNotMet)
+
   // Auto-create payment intent when customer data is complete
-  const formKey = `${formData.customerName}|${formData.customerEmail}|${formData.shippingMethod}|${items.length}|${totalGross}`
-  
+  // Include shippingCost so intent is refreshed when zone fee changes
+  const formKey = `${formData.customerName}|${formData.customerEmail}|${shippingCost}|${items.length}|${totalGross}`
+
   useEffect(() => {
     if (!shopAcceptsOrders || !shopStatusLoaded) return
-    if (formData.customerName && formData.customerEmail && items.length > 0 && !clientSecret && formKey !== prevFormKey.current) {
+    if (formData.customerName && formData.customerEmail && items.length > 0 && !clientSecret && formKey !== prevFormKey.current && deliveryReady) {
       prevFormKey.current = formKey
       createPaymentIntent()
     }
-  }, [shopAcceptsOrders, shopStatusLoaded, formKey, formData.customerName, formData.customerEmail, items.length, clientSecret, createPaymentIntent])
+  }, [shopAcceptsOrders, shopStatusLoaded, formKey, formData.customerName, formData.customerEmail, items.length, clientSecret, createPaymentIntent, deliveryReady])
 
   const handleOrderSuccess = () => {
     setSubmitted(true)
@@ -347,7 +404,7 @@ export default function CheckoutPage() {
                       </div>
                     </div>
                   </button>
-                  {/* Delivery by us */}
+                  {/* Delivery by us — distance-based pricing */}
                   <button
                     type="button"
                     onClick={() => { setFormData({ ...formData, shippingMethod: 'delivery' }); setClientSecret(null) }}
@@ -362,7 +419,9 @@ export default function CheckoutPage() {
                       <div>
                         <p className="text-sm font-semibold text-gray-900">{tr('deliverySelf')}</p>
                         <p className="text-xs text-gray-500">{tr('deliverySelfDesc')}</p>
-                        <p className="text-xs font-semibold text-emerald-600">3,00 €</p>
+                        <p className="text-xs font-semibold text-emerald-600">
+                          {deliveryZone ? formatPrice(deliveryZone.fee) : 'ab 4,00 €'}
+                        </p>
                       </div>
                     </div>
                   </button>
@@ -403,24 +462,90 @@ export default function CheckoutPage() {
                     </div>
                   </button>
                 </div>
-                {/* Address field for delivery */}
+                {/* Address field + zone calculation for delivery */}
                 {formData.shippingMethod === 'delivery' && (
                   <motion.div
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
-                    className="overflow-hidden"
+                    className="overflow-hidden space-y-3"
                   >
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                      Lieferadresse * <span className="text-xs text-gray-400 font-normal">(Straße, Hausnr., PLZ, Ort)</span>
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.customerAddress || ''}
-                      onChange={(e) => setFormData({ ...formData, customerAddress: e.target.value })}
-                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600/20 focus:border-emerald-600 transition-all"
-                      placeholder="Musterstraße 123, 22885 Barsbüttel"
-                    />
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                        {tr('deliveryAddressLabel')} *{' '}
+                        <span className="text-xs text-gray-400 font-normal">({tr('deliveryAddressHint')})</span>
+                      </label>
+                      <div className="flex gap-2">
+                        <div className="relative flex-1">
+                          <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                          <input
+                            type="text"
+                            required
+                            value={formData.customerAddress || ''}
+                            onChange={(e) => {
+                              setFormData({ ...formData, customerAddress: e.target.value })
+                              // Clear zone when address changes
+                              setDeliveryZone(null)
+                              setDeliveryZoneError(null)
+                              setClientSecret(null)
+                              prevFormKey.current = ''
+                            }}
+                            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); calculateZone() } }}
+                            className="w-full pl-9 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600/20 focus:border-emerald-600 transition-all"
+                            placeholder={tr('deliveryAddressPlaceholder')}
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={calculateZone}
+                          disabled={calculatingZone || !formData.customerAddress?.trim()}
+                          className="flex items-center gap-1.5 px-4 py-3 bg-emerald-600 text-white text-sm font-semibold rounded-xl hover:bg-emerald-700 disabled:opacity-50 transition-colors shrink-0"
+                        >
+                          {calculatingZone
+                            ? <Loader2 className="w-4 h-4 animate-spin" />
+                            : <Navigation className="w-4 h-4" />}
+                          {tr('calculateBtn')}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Zone result */}
+                    {deliveryZoneError && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-xl"
+                      >
+                        <AlertCircle className="w-4 h-4 text-red-500 mt-0.5 shrink-0" />
+                        <p className="text-sm font-medium text-red-700">{deliveryZoneError}</p>
+                      </motion.div>
+                    )}
+
+                    {deliveryZone && !deliveryZoneError && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className={`p-3 rounded-xl border ${
+                          minOrderNotMet
+                            ? 'bg-amber-50 border-amber-200'
+                            : 'bg-emerald-50 border-emerald-200'
+                        }`}
+                      >
+                        <p className="text-sm font-semibold text-gray-800 flex items-center gap-1.5 mb-1">
+                          <MapPin className="w-3.5 h-3.5 text-emerald-600" />
+                          {deliveryZone.distanceKm} km · Liefergebühr: <strong>{formatPrice(deliveryZone.fee)}</strong>
+                        </p>
+                        {minOrderNotMet ? (
+                          <p className="text-xs font-medium text-amber-700">
+                            {tr('minOrderError')} <strong>{formatPrice(deliveryZone.minOrder)}</strong>
+                            {' '}(noch {formatPrice(deliveryZone.minOrder - totalGross)} fehlen)
+                          </p>
+                        ) : (
+                          <p className="text-xs text-emerald-700">
+                            Mindestbestellwert {formatPrice(deliveryZone.minOrder)} — ✓ erfüllt
+                          </p>
+                        )}
+                      </motion.div>
+                    )}
                   </motion.div>
                 )}
               </div>
@@ -455,6 +580,24 @@ export default function CheckoutPage() {
                 <div className="flex items-center justify-center py-8 text-sm text-gray-500">
                   <AlertCircle className="w-5 h-5 mr-2 text-yellow-500" />
                   {tr('fillDataFirst')}
+                </div>
+              ) : formData.shippingMethod === 'delivery' && !deliveryZone && !deliveryZoneError ? (
+                <div className="flex items-start gap-3 py-6 px-4 bg-blue-50 rounded-xl border border-blue-100">
+                  <Navigation className="w-5 h-5 text-blue-500 mt-0.5 shrink-0" />
+                  <p className="text-sm text-blue-800">{tr('enterAddressFirst')}</p>
+                </div>
+              ) : minOrderNotMet ? (
+                <div className="flex items-start gap-3 py-6 px-4 bg-amber-50 rounded-xl border border-amber-200">
+                  <AlertCircle className="w-5 h-5 text-amber-500 mt-0.5 shrink-0" />
+                  <p className="text-sm font-medium text-amber-800">
+                    {tr('minOrderError')} <strong>{formatPrice(deliveryZone!.minOrder)}</strong>
+                    {' — '}noch {formatPrice(deliveryZone!.minOrder - totalGross)} bis zum Mindestbestellwert.
+                  </p>
+                </div>
+              ) : formData.shippingMethod === 'delivery' && deliveryZoneError ? (
+                <div className="flex items-start gap-3 py-6 px-4 bg-red-50 rounded-xl border border-red-200">
+                  <AlertCircle className="w-5 h-5 text-red-500 mt-0.5 shrink-0" />
+                  <p className="text-sm font-medium text-red-800">{deliveryZoneError}</p>
                 </div>
               ) : loadingPayment ? (
                 <div className="flex items-center justify-center py-8 text-sm text-gray-500">

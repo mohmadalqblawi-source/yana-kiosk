@@ -54,7 +54,7 @@ const inlineTranslations = {
   retry: { de: 'Erneut versuchen', en: 'Retry', fa: 'تلاش مجدد', ar: 'إعادة المحاولة' },
   deliveryAddressLabel: { de: 'Lieferadresse', en: 'Delivery address', fa: 'آدرس تحویل', ar: 'عنوان التوصيل' },
   deliveryAddressHint: { de: 'Straße, Hausnr., PLZ, Ort', en: 'Street, No., ZIP, City', fa: 'خیابان، شماره، کد پستی، شهر', ar: 'الشارع، الرقم، الرمز البريدي، المدينة' },
-  deliveryAddressPlaceholder: { de: 'z.B. Musterstraße 12, 22889 Hamburg', en: 'e.g. Example St 12, 22889 Hamburg', fa: 'مثال: خیابان نمونه ۱۲، ۲۲۸۸۹ هامبورگ', ar: 'مثال: شارع نموذجي 12، 22889 هامبورغ' },
+  deliveryAddressPlaceholder: { de: 'z.B. Musterstraße 1, 22885 Barsbüttel', en: 'e.g. Example St 1, 22885 Barsbüttel', fa: 'مثال: خیابان نمونه ۱، ۲۲۸۸۵', ar: 'مثال: شارع نموذجي 1، 22885' },
   calculateBtn: { de: 'Liefergebühr berechnen', en: 'Calculate delivery fee', fa: 'محاسبه هزینه تحویل', ar: 'احسب رسوم التوصيل' },
   outOfRange: { de: 'Leider liefern wir nicht in Ihre Region', en: 'Sorry, we do not deliver to your area', fa: 'متأسفانه به منطقه شما تحویل نمی‌دهیم', ar: 'عذراً، لا نوصل إلى منطقتك' },
   minOrderError: { de: 'Mindestbestellwert für Ihre Zone:', en: 'Minimum order value for your zone:', fa: 'حداقل سفارش برای منطقه شما:', ar: 'الحد الأدنى للطلب في منطقتك:' },
@@ -474,8 +474,8 @@ export default function CheckoutPage() {
                         {tr('deliveryAddressLabel')} *{' '}
                         <span className="text-xs text-gray-400 font-normal">({tr('deliveryAddressHint')})</span>
                       </label>
-                      <div className="flex gap-2">
-                        <div className="relative flex-1">
+                      <div className="flex flex-col gap-3">
+                        <div className="relative w-full">
                           <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                           <input
                             type="text"
@@ -483,14 +483,13 @@ export default function CheckoutPage() {
                             value={formData.customerAddress || ''}
                             onChange={(e) => {
                               setFormData({ ...formData, customerAddress: e.target.value })
-                              // Clear zone when address changes
                               setDeliveryZone(null)
                               setDeliveryZoneError(null)
                               setClientSecret(null)
                               prevFormKey.current = ''
                             }}
                             onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); calculateZone() } }}
-                            className="w-full pl-9 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600/20 focus:border-emerald-600 transition-all"
+                            className="w-full pl-9 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600/20 focus:border-emerald-600 transition-all"
                             placeholder={tr('deliveryAddressPlaceholder')}
                           />
                         </div>
@@ -498,7 +497,7 @@ export default function CheckoutPage() {
                           type="button"
                           onClick={calculateZone}
                           disabled={calculatingZone || !formData.customerAddress?.trim()}
-                          className="flex items-center gap-1.5 px-4 py-3 bg-emerald-600 text-white text-sm font-semibold rounded-xl hover:bg-emerald-700 disabled:opacity-50 transition-colors shrink-0"
+                          className="w-full flex items-center justify-center gap-2 px-4 py-4 bg-emerald-600 text-white text-sm font-semibold rounded-xl hover:bg-emerald-700 disabled:opacity-50 transition-colors"
                         >
                           {calculatingZone
                             ? <Loader2 className="w-4 h-4 animate-spin" />

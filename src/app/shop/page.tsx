@@ -8,12 +8,14 @@ import ProductGrid from '@/components/ProductGrid'
 import { ProductCardSkeleton } from '@/components/SkeletonLoader'
 import { useLanguageStore } from '@/store/language'
 import { isAgeRestrictedCategory } from '@/lib/categories'
-import { getCategoryStyle } from '@/lib/category-styles'
+import { resolveCategoryStyle } from '@/lib/category-styles'
 import { Search, X, Store, ShieldAlert } from 'lucide-react'
 
 interface ShopCategory {
   id: string
   name: string
+  icon?: string
+  color?: string
 }
 
 const inlineTranslations = {
@@ -258,7 +260,7 @@ function ShopContent() {
         >
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3">
             {categories.map((cat, index) => {
-              const style = getCategoryStyle(cat.name, index)
+              const style = resolveCategoryStyle(cat, index)
               const Icon = style.icon
               const count = categoryProductCount(cat.name)
               const isActive = selectedCategory === cat.name

@@ -4,7 +4,15 @@ import { useState, useEffect, useMemo, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Product, StoreSettings } from '@/types'
 import { formatPrice, calculateVAT } from '@/lib/utils'
-import { getCategoryStyle, SNACK_CATEGORY_PRESETS } from '@/lib/category-styles'
+import {
+  resolveCategoryStyle,
+  suggestCategoryKeys,
+  DEFAULT_ICON_KEY,
+  DEFAULT_COLOR_KEY,
+  getCategoryIconLabel,
+  getCategoryColorLabel,
+} from '@/lib/category-styles'
+import CategoryStylePicker from '@/components/CategoryStylePicker'
 import { useUIStore } from '@/store/ui'
 import { useAdminStore } from '@/store/admin'
 import {
@@ -12,7 +20,7 @@ import {
   AlertTriangle, Loader2, Image as ImageIcon,
   Type, Euro, Tag, Warehouse, CheckSquare, Square,
   ChevronDown, ChevronUp, Camera, Store, Grid3X3, List,
-  Layers, Power, FolderOpen, Check,
+  Layers, Power, FolderOpen, Check, Palette,
 } from 'lucide-react'
 
 interface ProductForm {
@@ -38,6 +46,8 @@ const emptyForm: ProductForm = {
 interface CategoryRow {
   id: string
   name: string
+  icon?: string
+  color?: string
 }
 
 export default function AdminPage() {
@@ -59,11 +69,13 @@ export default function AdminPage() {
   // ── Categories state ──────────────────────────────────────────────────────
   const [catList, setCatList] = useState<CategoryRow[]>([])
   const [catLoading, setCatLoading] = useState(false)
-  const [newCatName, setNewCatName] = useState('')
-  const [addingCat, setAddingCat] = useState(false)
-  const [editingCatId, setEditingCatId] = useState<string | null>(null)
-  const [editingCatName, setEditingCatName] = useState('')
-  const [savingCatId, setSavingCatId] = useState<string | null>(null)
+  const [showCatModal, setShowCatModal] = useState(false)
+  const [catModalMode, setCatModalMode] = useState<'add' | 'edit'>('add')
+  const [catFormId, setCatFormId] = useState<string | null>(null)
+  const [catFormName, setCatFormName] = useState('')
+  const [catFormIcon, setCatFormIcon] = useState(DEFAULT_ICON_KEY)
+  const [catFormColor, setCatFormColor] = useState(DEFAULT_COLOR_KEY)
+  const [savingCat, setSavingCat] = useState(false)
   const [deletingCatId, setDeletingCatId] = useState<string | null>(null)
   const [storeSettings, setStoreSettings] = useState<StoreSettings | null>(null)
   const [settingsLoading, setSettingsLoading] = useState(true)
@@ -337,58 +349,69 @@ export default function AdminPage() {
     }
   }, [activeTab, token, fetchCategories])
 
-  const handleAddCategory = async () => {
-    await addCategoryByName(newCatName.trim())
+  useEffect(() => {
+    if (!showCatModal || catModalMode !== 'add' || !catFormName.trim()) return
+    const suggested = suggestCategoryKeys(catFormName.trim())
+    setCatFormIcon(suggested.icon)
+    setCatFormColor(suggested.color)
+  }, [catFormName, showCatModal, catModalMode])
+
+  const getDisplayStyleKeys = (cat: CategoryRow) => {
+    const suggested = suggestCategoryKeys(cat.name)
+    return {
+      icon: cat.icon && cat.icon !== DEFAULT_ICON_KEY ? cat.icon : suggested.icon,
+      color: cat.color && cat.color !== DEFAULT_COLOR_KEY ? cat.color : suggested.color,
+    }
   }
 
-  const addCategoryByName = async (name: string) => {
+  const openAddCategoryModal = () => {
+    setCatModalMode('add')
+    setCatFormId(null)
+    setCatFormName('')
+    setCatFormIcon(DEFAULT_ICON_KEY)
+    setCatFormColor(DEFAULT_COLOR_KEY)
+    setShowCatModal(true)
+  }
+
+  const openEditCategoryModal = (cat: CategoryRow) => {
+    const keys = getDisplayStyleKeys(cat)
+    setCatModalMode('edit')
+    setCatFormId(cat.id)
+    setCatFormName(cat.name)
+    setCatFormIcon(keys.icon)
+    setCatFormColor(keys.color)
+    setShowCatModal(true)
+  }
+
+  const closeCategoryModal = () => {
+    setShowCatModal(false)
+    setCatFormId(null)
+  }
+
+  const handleSaveCategoryModal = async () => {
+    const name = catFormName.trim()
     if (!name) return
     if (!token) {
       addToast('Nicht angemeldet — bitte erneut anmelden', 'error')
       return
     }
-    if (catList.some(c => c.name === name)) {
+
+    if (catModalMode === 'add' && catList.some(c => c.name === name)) {
       addToast(`"${name}" existiert bereits`, 'error')
       return
     }
-    setAddingCat(true)
-    try {
-      const res = await fetch('/api/admin/categories', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ name }),
-      })
-      const data = await res.json()
-      if (!res.ok) {
-        addToast(
-          res.status === 401 ? 'Sitzung abgelaufen — bitte erneut anmelden' : data.error || 'Fehler beim Hinzufügen',
-          'error'
-        )
-        return
-      }
-      setCatList(prev => [...prev, data].sort((a, b) => a.name.localeCompare(b.name, 'de')))
-      setNewCatName('')
-      addToast(`"${data.name}" hinzugefügt`, 'success')
-    } catch {
-      addToast('Fehler beim Hinzufügen', 'error')
-    } finally {
-      setAddingCat(false)
-    }
-  }
 
-  const handleSaveCategory = async (id: string) => {
-    const name = editingCatName.trim()
-    if (!name) return
-    if (!token) {
-      addToast('Nicht angemeldet — bitte erneut anmelden', 'error')
-      return
-    }
-    setSavingCatId(id)
+    setSavingCat(true)
     try {
+      const isEdit = catModalMode === 'edit' && catFormId
       const res = await fetch('/api/admin/categories', {
-        method: 'PUT',
+        method: isEdit ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ id, name }),
+        body: JSON.stringify(
+          isEdit
+            ? { id: catFormId, name, icon: catFormIcon, color: catFormColor }
+            : { name, icon: catFormIcon, color: catFormColor }
+        ),
       })
       const data = await res.json()
       if (!res.ok) {
@@ -398,15 +421,21 @@ export default function AdminPage() {
         )
         return
       }
-      setCatList(prev =>
-        prev.map(c => c.id === id ? data : c).sort((a, b) => a.name.localeCompare(b.name, 'de'))
-      )
-      setEditingCatId(null)
-      addToast('Kategorie aktualisiert', 'success')
+
+      if (isEdit) {
+        setCatList(prev =>
+          prev.map(c => c.id === catFormId ? data : c).sort((a, b) => a.name.localeCompare(b.name, 'de'))
+        )
+        addToast('Kategorie aktualisiert', 'success')
+      } else {
+        setCatList(prev => [...prev, data].sort((a, b) => a.name.localeCompare(b.name, 'de')))
+        addToast(`"${data.name}" hinzugefügt`, 'success')
+      }
+      closeCategoryModal()
     } catch {
       addToast('Fehler beim Speichern', 'error')
     } finally {
-      setSavingCatId(null)
+      setSavingCat(false)
     }
   }
 
@@ -667,86 +696,33 @@ export default function AdminPage() {
           animate={{ opacity: 1, y: 0 }}
           className="space-y-4"
         >
-          {/* Add new category */}
-          <div className="bg-white rounded-2xl border border-gray-100 p-5 sm:p-6 shadow-sm">
-            <h2 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center">
-                <Plus className="w-4 h-4 text-white" />
-              </div>
-              Neue Kategorie hinzufügen
-            </h2>
-            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-              <input
-                type="text"
-                value={newCatName}
-                onChange={e => setNewCatName(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter') handleAddCategory() }}
-                placeholder="z.B. Getränke, Snacks, Shisha..."
-                className="w-full flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600/20 focus:border-emerald-600 transition-all"
-              />
-              <motion.button
-                type="button"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={handleAddCategory}
-                disabled={addingCat || !newCatName.trim()}
-                className="w-full sm:w-auto shrink-0 px-5 py-3 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-xl text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50 hover:shadow-lg hover:shadow-emerald-600/20 transition-all"
-              >
-                {addingCat ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                Hinzufügen
-              </motion.button>
-            </div>
-            {/* Snack categories — quick add with icons */}
-            <div className="mt-4 pt-4 border-t border-gray-100">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
-                Snacks — Schnell hinzufügen
+          {/* Header + add button */}
+          <div className="bg-white rounded-2xl border border-gray-100 p-5 sm:p-6 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
+                <FolderOpen className="w-5 h-5 text-emerald-600" />
+                Kategorien verwalten
+              </h2>
+              <p className="text-sm text-gray-500 mt-1">
+                Name, Icon und Farbe für den Shop festlegen — tippe auf „Bearbeiten“ bei einer Kategorie.
               </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                {SNACK_CATEGORY_PRESETS.map((preset) => {
-                  const style = getCategoryStyle(preset.name)
-                  const Icon = style.icon
-                  const exists = catList.some(c => c.name === preset.name)
-                  const count = products.filter(p => p.category === preset.name).length
-                  return (
-                    <button
-                      key={preset.name}
-                      type="button"
-                      disabled={exists || addingCat}
-                      onClick={() => addCategoryByName(preset.name)}
-                      className={`flex items-center gap-3 px-4 py-3 rounded-2xl border-2 text-left transition-all disabled:opacity-50 ${
-                        exists
-                          ? 'border-emerald-200 bg-emerald-50/50 cursor-default'
-                          : 'border-gray-200 bg-white hover:border-emerald-300 hover:shadow-sm'
-                      }`}
-                    >
-                      <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${style.color} flex items-center justify-center shrink-0 shadow-sm`}>
-                        <Icon className="w-5 h-5 text-white" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-bold text-gray-900">{preset.label}</p>
-                        <p className="text-xs text-gray-400">
-                          {exists ? `${count} Produkte · bereits vorhanden` : 'Tippen zum Hinzufügen'}
-                        </p>
-                      </div>
-                      {exists ? (
-                        <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-                      ) : (
-                        <Plus className="w-4 h-4 text-emerald-600 shrink-0" />
-                      )}
-                    </button>
-                  )
-                })}
-              </div>
             </div>
+            <motion.button
+              type="button"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={openAddCategoryModal}
+              className="w-full sm:w-auto shrink-0 px-5 py-3 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-xl text-sm font-semibold flex items-center justify-center gap-2 hover:shadow-lg hover:shadow-emerald-600/20 transition-all"
+            >
+              <Plus className="w-4 h-4" />
+              Neue Kategorie
+            </motion.button>
           </div>
 
           {/* Category list */}
           <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
             <div className="px-5 sm:px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-              <h2 className="text-sm font-bold text-gray-900 flex items-center gap-2">
-                <FolderOpen className="w-4 h-4 text-emerald-600" />
-                Alle Kategorien
-              </h2>
+              <h3 className="text-sm font-bold text-gray-900">Alle Kategorien</h3>
               <span className="text-xs text-gray-400 bg-gray-100 px-2.5 py-1 rounded-lg font-medium">
                 {catList.length}
               </span>
@@ -757,97 +733,73 @@ export default function AdminPage() {
                 <Loader2 className="w-5 h-5 animate-spin text-emerald-600" />
               </div>
             ) : catList.length === 0 ? (
-              <div className="text-center py-16 text-gray-400">
+              <div className="text-center py-16 text-gray-400 px-6">
                 <FolderOpen className="w-10 h-10 mx-auto mb-3 opacity-30" />
-                <p className="text-sm">Noch keine Kategorien</p>
+                <p className="text-sm font-medium text-gray-600">Noch keine Kategorien</p>
+                <p className="text-xs mt-1">Erstelle die erste Kategorie mit Icon und Farbe.</p>
+                <button
+                  type="button"
+                  onClick={openAddCategoryModal}
+                  className="mt-4 px-4 py-2 text-sm font-semibold text-emerald-700 bg-emerald-50 rounded-xl hover:bg-emerald-100 transition-colors"
+                >
+                  Kategorie anlegen
+                </button>
               </div>
             ) : (
               <div className="p-4 sm:p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                <AnimatePresence initial={false}>
-                  {catList.map((cat, index) => {
-                    const style = getCategoryStyle(cat.name, index)
-                    const Icon = style.icon
-                    const productCount = products.filter(p => p.category === cat.name).length
-                    const isEditing = editingCatId === cat.id
+                {catList.map((cat, index) => {
+                  const style = resolveCategoryStyle(cat, index)
+                  const Icon = style.icon
+                  const keys = getDisplayStyleKeys(cat)
+                  const productCount = products.filter(p => p.category === cat.name).length
 
-                    return (
-                      <motion.div
-                        key={cat.id}
-                        layout
-                        initial={{ opacity: 0, scale: 0.96 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.96 }}
-                        className="relative flex items-center gap-3 p-4 rounded-2xl border-2 border-gray-100 bg-white hover:border-emerald-100 hover:shadow-md transition-all group"
-                      >
-                        <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${style.color} flex items-center justify-center shrink-0 shadow-sm`}>
-                          <Icon className="w-5 h-5 text-white" />
-                        </div>
+                  return (
+                    <motion.div
+                      key={cat.id}
+                      layout
+                      initial={{ opacity: 0, scale: 0.96 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="relative flex items-center gap-3 p-4 rounded-2xl border-2 border-gray-100 bg-white hover:border-emerald-100 hover:shadow-md transition-all"
+                    >
+                      <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${style.color} flex items-center justify-center shrink-0 shadow-sm`}>
+                        <Icon className="w-6 h-6 text-white" />
+                      </div>
 
-                        {isEditing ? (
-                          <div className="flex-1 flex items-center gap-2 min-w-0">
-                            <input
-                              autoFocus
-                              value={editingCatName}
-                              onChange={e => setEditingCatName(e.target.value)}
-                              onKeyDown={e => {
-                                if (e.key === 'Enter') handleSaveCategory(cat.id)
-                                if (e.key === 'Escape') setEditingCatId(null)
-                              }}
-                              className="flex-1 min-w-0 px-3 py-2 border border-emerald-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600/20 bg-white"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => handleSaveCategory(cat.id)}
-                              disabled={savingCatId === cat.id || !editingCatName.trim()}
-                              className="p-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50"
-                            >
-                              {savingCatId === cat.id
-                                ? <Loader2 className="w-4 h-4 animate-spin" />
-                                : <Check className="w-4 h-4" />}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setEditingCatId(null)}
-                              className="p-2 rounded-lg text-gray-400 hover:bg-gray-100"
-                            >
-                              <X className="w-4 h-4" />
-                            </button>
-                          </div>
-                        ) : (
-                          <>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-bold text-gray-900 truncate">{cat.name}</p>
-                              <p className="text-xs text-gray-400 mt-0.5">
-                                {productCount} {productCount === 1 ? 'Produkt' : 'Produkte'}
-                              </p>
-                            </div>
-                            <div className="flex items-center gap-1 shrink-0">
-                              <button
-                                type="button"
-                                onClick={() => { setEditingCatId(cat.id); setEditingCatName(cat.name) }}
-                                className="p-2 rounded-lg text-gray-400 hover:bg-blue-50 hover:text-blue-600 transition-colors"
-                                title="Bearbeiten"
-                              >
-                                <Edit3 className="w-4 h-4" />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteCategory(cat.id, cat.name)}
-                                disabled={deletingCatId === cat.id}
-                                className="p-2 rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-600 transition-colors disabled:opacity-40"
-                                title="Löschen"
-                              >
-                                {deletingCatId === cat.id
-                                  ? <Loader2 className="w-4 h-4 animate-spin" />
-                                  : <Trash2 className="w-4 h-4" />}
-                              </button>
-                            </div>
-                          </>
-                        )}
-                      </motion.div>
-                    )
-                  })}
-                </AnimatePresence>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold text-gray-900 truncate">{cat.name}</p>
+                        <p className="text-xs text-gray-400 mt-0.5">
+                          {productCount} {productCount === 1 ? 'Produkt' : 'Produkte'}
+                        </p>
+                        <p className="text-[11px] text-emerald-600 font-medium mt-1 truncate">
+                          {getCategoryIconLabel(keys.icon)} · {getCategoryColorLabel(keys.color)}
+                        </p>
+                      </div>
+
+                      <div className="flex flex-col gap-1 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => openEditCategoryModal(cat)}
+                          className="px-3 py-2 rounded-xl text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-colors flex items-center gap-1.5"
+                          title="Name, Icon & Farbe bearbeiten"
+                        >
+                          <Palette className="w-3.5 h-3.5" />
+                          Bearbeiten
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteCategory(cat.id, cat.name)}
+                          disabled={deletingCatId === cat.id}
+                          className="p-2 rounded-xl text-gray-400 hover:bg-red-50 hover:text-red-600 transition-colors disabled:opacity-40 flex items-center justify-center"
+                          title="Löschen"
+                        >
+                          {deletingCatId === cat.id
+                            ? <Loader2 className="w-4 h-4 animate-spin" />
+                            : <Trash2 className="w-4 h-4" />}
+                        </button>
+                      </div>
+                    </motion.div>
+                  )
+                })}
               </div>
             )}
           </div>
@@ -1311,6 +1263,106 @@ export default function AdminPage() {
                     <>
                       <Plus className="w-4 h-4" />
                       {editingProduct ? 'Aktualisieren' : 'Produkt hinzufügen'}
+                    </>
+                  )}
+                </motion.button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Modal - Category (Name, Icon, Farbe) */}
+      <AnimatePresence>
+        {showCatModal && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={closeCategoryModal}
+              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="fixed inset-4 sm:inset-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:w-full sm:max-w-lg bg-white rounded-3xl shadow-2xl z-50 overflow-y-auto max-h-[92vh]"
+            >
+              <div className="p-6 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-10">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl flex items-center justify-center">
+                    <Palette className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold text-gray-900">
+                      {catModalMode === 'edit' ? 'Kategorie bearbeiten' : 'Neue Kategorie'}
+                    </h2>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      Name, Icon und Farbe für den Shop
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={closeCategoryModal}
+                  className="p-2 rounded-xl hover:bg-gray-100 transition-colors"
+                >
+                  <X className="w-5 h-5 text-gray-400" />
+                </button>
+              </div>
+
+              <div className="p-6 space-y-5">
+                <div className="bg-gray-50 rounded-2xl p-4 sm:p-5 border border-gray-100">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                    <Type className="w-4 h-5 text-emerald-500" />
+                    Kategoriename <span className="text-red-400">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={catFormName}
+                    onChange={e => setCatFormName(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) handleSaveCategoryModal() }}
+                    className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600/20 focus:border-emerald-600 transition-all"
+                    placeholder="z.B. Getränke, Snacks, Shisha..."
+                    autoFocus
+                  />
+                </div>
+
+                <CategoryStylePicker
+                  selectedIcon={catFormIcon}
+                  selectedColor={catFormColor}
+                  onIconChange={setCatFormIcon}
+                  onColorChange={setCatFormColor}
+                  previewName={catFormName.trim() || 'Neue Kategorie'}
+                />
+              </div>
+
+              <div className="p-6 border-t border-gray-100 flex items-center justify-between gap-3 sticky bottom-0 bg-white">
+                <button
+                  type="button"
+                  onClick={closeCategoryModal}
+                  className="px-6 py-3 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+                >
+                  Abbrechen
+                </button>
+                <motion.button
+                  type="button"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={handleSaveCategoryModal}
+                  disabled={savingCat || !catFormName.trim()}
+                  className="px-8 py-3 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-xl text-sm font-medium hover:shadow-lg hover:shadow-emerald-600/25 transition-all flex items-center gap-2 disabled:opacity-60"
+                >
+                  {savingCat ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Speichern...
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-4 h-4" />
+                      {catModalMode === 'edit' ? 'Speichern' : 'Kategorie anlegen'}
                     </>
                   )}
                 </motion.button>

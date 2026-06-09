@@ -7,6 +7,7 @@ import {
   Droplets,
   ShoppingBag,
   Candy,
+  Cookie,
   Beer,
   Sparkles,
   type LucideIcon,
@@ -16,6 +17,12 @@ export interface CategoryStyle {
   icon: LucideIcon
   color: string
 }
+
+/** Snack category presets shown in admin quick-add. */
+export const SNACK_CATEGORY_PRESETS = [
+  { name: 'Süße Snacks', label: 'Süße Snacks' },
+  { name: 'Salzige Snacks', label: 'Salzige Snacks' },
+] as const
 
 const PALETTE = [
   'from-emerald-500 to-emerald-600',
@@ -30,11 +37,26 @@ const PALETTE = [
   'from-indigo-500 to-indigo-600',
 ]
 
+function normalizeCategoryName(name: string): string {
+  return name.toLowerCase().normalize('NFD').replace(/\p{M}/gu, '')
+}
+
 /** Icon + gradient per category name (keyword match, then palette fallback). */
 export function getCategoryStyle(name: string, index = 0): CategoryStyle {
-  const c = name.toLowerCase()
+  const c = normalizeCategoryName(name)
 
-  if (/lebensmittel|essen|snack|süß|salzig|kaugummi|kinder|schokolade|chips/.test(c)) {
+  // ── Snacks (dedicated icons — check before other food rules) ──────────────
+  if (/salzige\s*snack|salzige snack/.test(c) || (c.includes('salzig') && c.includes('snack'))) {
+    return { icon: Cookie, color: 'from-orange-500 to-amber-600' }
+  }
+  if (/susse\s*snack|süße\s*snack|susse snack/.test(c) || (/(susse|süß)/.test(c) && c.includes('snack'))) {
+    return { icon: UtensilsCrossed, color: 'from-emerald-500 to-emerald-600' }
+  }
+  if (/snack|chips|schokolade|fruchtgummi|lakritz|bonbon|gummi/.test(c)) {
+    return { icon: Candy, color: 'from-emerald-500 to-emerald-600' }
+  }
+
+  if (/lebensmittel|essen|kaugummi|kinder/.test(c)) {
     return { icon: UtensilsCrossed, color: 'from-emerald-500 to-emerald-600' }
   }
   if (/getränk|drink|saft|cola|energy|milch|soft|wein|sekt|spirituosen|kasten/.test(c)) {
@@ -60,9 +82,6 @@ export function getCategoryStyle(name: string, index = 0): CategoryStyle {
   }
   if (/drogerie/.test(c)) {
     return { icon: Pill, color: 'from-purple-500 to-purple-600' }
-  }
-  if (/süß|candy|gummi|bonbon/.test(c)) {
-    return { icon: Candy, color: 'from-pink-500 to-rose-600' }
   }
   if (/energy|red bull|monster/.test(c)) {
     return { icon: Sparkles, color: 'from-violet-500 to-purple-600' }

@@ -1,13 +1,26 @@
 import { prisma } from '@/lib/prisma'
 
-/** Import distinct product category names into Category table when empty. */
+const DEFAULT_CATEGORY_NAMES = ['Süße Snacks', 'Salzige Snacks']
+
+/** Ensure standard snack categories exist in the database. */
+export async function ensureDefaultCategories() {
+  await Promise.all(
+    DEFAULT_CATEGORY_NAMES.map((name) =>
+      prisma.category.upsert({
+        where: { name },
+        update: {},
+        create: { name },
+      })
+    )
+  )
+}
+
+/** Import product categories + ensure snack defaults exist. */
 export async function syncCategoriesFromProducts() {
-  const existing = await prisma.category.count()
-  if (existing > 0) return
+  await ensureDefaultCategories()
 
   const products = await prisma.product.findMany({ select: { category: true } })
   const names = [...new Set(products.map((p) => p.category).filter(Boolean))]
-  if (names.length === 0) return
 
   await Promise.all(
     names.map((name) =>

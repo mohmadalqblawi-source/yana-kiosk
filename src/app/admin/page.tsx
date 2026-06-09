@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Product, StoreSettings } from '@/types'
 import { formatPrice, calculateVAT } from '@/lib/utils'
-import { getCategoryStyle } from '@/lib/category-styles'
+import { getCategoryStyle, SNACK_CATEGORY_PRESETS } from '@/lib/category-styles'
 import { useUIStore } from '@/store/ui'
 import { useAdminStore } from '@/store/admin'
 import {
@@ -338,10 +338,17 @@ export default function AdminPage() {
   }, [activeTab, token, fetchCategories])
 
   const handleAddCategory = async () => {
-    const name = newCatName.trim()
+    await addCategoryByName(newCatName.trim())
+  }
+
+  const addCategoryByName = async (name: string) => {
     if (!name) return
     if (!token) {
       addToast('Nicht angemeldet — bitte erneut anmelden', 'error')
+      return
+    }
+    if (catList.some(c => c.name === name)) {
+      addToast(`"${name}" existiert bereits`, 'error')
       return
     }
     setAddingCat(true)
@@ -688,6 +695,48 @@ export default function AdminPage() {
                 {addingCat ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
                 Hinzufügen
               </motion.button>
+            </div>
+            {/* Snack categories — quick add with icons */}
+            <div className="mt-4 pt-4 border-t border-gray-100">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
+                Snacks — Schnell hinzufügen
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                {SNACK_CATEGORY_PRESETS.map((preset) => {
+                  const style = getCategoryStyle(preset.name)
+                  const Icon = style.icon
+                  const exists = catList.some(c => c.name === preset.name)
+                  const count = products.filter(p => p.category === preset.name).length
+                  return (
+                    <button
+                      key={preset.name}
+                      type="button"
+                      disabled={exists || addingCat}
+                      onClick={() => addCategoryByName(preset.name)}
+                      className={`flex items-center gap-3 px-4 py-3 rounded-2xl border-2 text-left transition-all disabled:opacity-50 ${
+                        exists
+                          ? 'border-emerald-200 bg-emerald-50/50 cursor-default'
+                          : 'border-gray-200 bg-white hover:border-emerald-300 hover:shadow-sm'
+                      }`}
+                    >
+                      <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${style.color} flex items-center justify-center shrink-0 shadow-sm`}>
+                        <Icon className="w-5 h-5 text-white" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-bold text-gray-900">{preset.label}</p>
+                        <p className="text-xs text-gray-400">
+                          {exists ? `${count} Produkte · bereits vorhanden` : 'Tippen zum Hinzufügen'}
+                        </p>
+                      </div>
+                      {exists ? (
+                        <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                      ) : (
+                        <Plus className="w-4 h-4 text-emerald-600 shrink-0" />
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
             </div>
           </div>
 

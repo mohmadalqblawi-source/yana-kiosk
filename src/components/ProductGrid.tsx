@@ -1,8 +1,10 @@
 'use client'
 
+import { useMemo } from 'react'
 import { Product } from '@/types'
 import ProductCard from './ProductCard'
 import { useLanguageStore } from '@/store/language'
+import { buildCategoryLookup } from '@/lib/category-styles'
 import { PackageOpen } from 'lucide-react'
 
 const inlineTranslations = {
@@ -12,10 +14,12 @@ const inlineTranslations = {
 
 interface ProductGridProps {
   products: Product[]
+  categories?: { name: string; icon?: string | null; color?: string | null }[]
 }
 
-export default function ProductGrid({ products }: ProductGridProps) {
+export default function ProductGrid({ products, categories = [] }: ProductGridProps) {
   const { lang } = useLanguageStore()
+  const categoryLookup = useMemo(() => buildCategoryLookup(categories), [categories])
 
   const tr = (key: string) => {
     const keys = key.split('.')
@@ -43,7 +47,12 @@ export default function ProductGrid({ products }: ProductGridProps) {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-5 lg:gap-6">
       {products.map((product, index) => (
-        <ProductCard key={product.id} product={product} index={index} />
+        <ProductCard
+          key={product.id}
+          product={product}
+          index={index}
+          categoryLookup={categoryLookup}
+        />
       ))}
     </div>
   )

@@ -177,6 +177,25 @@ export function suggestCategoryKeys(name: string): { icon: string; color: string
   return { icon: DEFAULT_ICON_KEY, color: DEFAULT_COLOR_KEY }
 }
 
+/** Build name → category metadata map for product cards. */
+export function buildCategoryLookup(
+  categories: { name: string; icon?: string | null; color?: string | null }[]
+): Record<string, { name: string; icon?: string | null; color?: string | null }> {
+  return Object.fromEntries(categories.map((c) => [c.name, c]))
+}
+
+export function resolveProductCategoryStyle(
+  categoryName: string,
+  lookup?: Record<string, { icon?: string | null; color?: string | null }>
+): CategoryStyle {
+  const meta = lookup?.[categoryName]
+  return resolveCategoryStyle({
+    name: categoryName,
+    icon: meta?.icon,
+    color: meta?.color,
+  })
+}
+
 /** Resolve icon component + gradient from stored keys (with name-based fallback). */
 export function resolveCategoryStyle(
   cat: { name: string; icon?: string | null; color?: string | null },

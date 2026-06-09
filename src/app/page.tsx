@@ -3,29 +3,34 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { Product } from '@/types'
+import { Product, Category } from '@/types'
 import ProductCard from '@/components/ProductCard'
 import { ProductCardSkeleton } from '@/components/SkeletonLoader'
 import { useLanguageStore } from '@/store/language'
+import { buildCategoryLookup } from '@/lib/category-styles'
 import { ArrowRight, Store, Shield, Truck, Sparkles } from 'lucide-react'
 
 export default function HomePage() {
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [allProducts, setAllProducts] = useState<Product[]>([])
+  const [categories, setCategories] = useState<Pick<Category, 'name' | 'icon' | 'color'>[]>([])
   const { lang } = useLanguageStore()
 
   useEffect(() => {
     async function fetchData() {
       try {
-        const [featuredRes, allRes] = await Promise.all([
+        const [featuredRes, allRes, catRes] = await Promise.all([
           fetch('/api/products?featured=true'),
           fetch('/api/products'),
+          fetch('/api/categories'),
         ])
         const featured = await featuredRes.json()
         const all = await allRes.json()
+        const cats = catRes.ok ? await catRes.json() : []
         setFeaturedProducts(Array.isArray(featured) ? featured : [])
         setAllProducts(Array.isArray(all) ? all : [])
+        setCategories(Array.isArray(cats) ? cats : [])
       } catch (error) {
         console.error('Error fetching products:', error)
         setFeaturedProducts([])
@@ -38,6 +43,7 @@ export default function HomePage() {
   }, [])
 
   const displayProducts = featuredProducts.length > 0 ? featuredProducts : allProducts.slice(0, 8)
+  const categoryLookup = buildCategoryLookup(categories)
 
   const t = (key: string) => {
     const keys = key.split('.')
@@ -166,7 +172,12 @@ export default function HomePage() {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {displayProducts.slice(0, 8).map((product, index) => (
-                <ProductCard key={product.id} product={product} index={index} />
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  index={index}
+                  categoryLookup={categoryLookup}
+                />
               ))}
             </div>
           )}

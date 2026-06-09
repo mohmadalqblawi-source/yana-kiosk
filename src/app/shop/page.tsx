@@ -372,7 +372,7 @@ function ShopContent() {
         </motion.div>
       ) : (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}>
-          <ProductGrid products={filteredProducts} />
+          <ProductGrid products={filteredProducts} categories={categories} />
         </motion.div>
       )}
     </div>

@@ -34,6 +34,11 @@ const emptyForm: ProductForm = {
   featured: false,
 }
 
+interface CategoryRow {
+  id: string
+  name: string
+}
+
 export default function AdminPage() {
   const { token } = useAdminStore()
   const addToast = useUIStore((s) => s.addToast)
@@ -51,7 +56,6 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'categories'>('overview')
 
   // ── Categories state ──────────────────────────────────────────────────────
-  interface CategoryRow { id: string; name: string }
   const [catList, setCatList] = useState<CategoryRow[]>([])
   const [catLoading, setCatLoading] = useState(false)
   const [newCatName, setNewCatName] = useState('')
@@ -290,76 +294,141 @@ export default function AdminPage() {
   }
 
   // ── Categories CRUD ───────────────────────────────────────────────────────
-  const fetchCategories = useCallback(async (authToken: string) => {
+  const fetchCategories = useCallback(async (authToken: string, showError = false) => {
+    if (!authToken) return false
     setCatLoading(true)
     try {
       const res = await fetch('/api/admin/categories', {
         headers: { Authorization: `Bearer ${authToken}` },
+        cache: 'no-store',
       })
-      if (!res.ok) return
       const data = await res.json()
+      if (!res.ok) {
+        if (showError) {
+          addToast(
+            res.status === 401
+              ? 'Sitzung abgelaufen — bitte erneut anmelden'
+              : data.error || 'Kategorien konnten nicht geladen werden',
+            'error'
+          )
+        }
+        return false
+      }
       setCatList(Array.isArray(data) ? data : [])
-    } catch { /* ignore */ }
-    finally { setCatLoading(false) }
-  }, [])
-
-  useEffect(() => {
-    if (activeTab === 'categories' && token && catList.length === 0 && !catLoading) {
-      fetchCategories(token)
+      return true
+    } catch {
+      if (showError) addToast('Kategorien konnten nicht geladen werden', 'error')
+      return false
+    } finally {
+      setCatLoading(false)
     }
-  }, [activeTab, token, catList.length, catLoading, fetchCategories])
+  }, [addToast])
+
+  // Load categories whenever admin token is available
+  useEffect(() => {
+    if (token) fetchCategories(token)
+  }, [token, fetchCategories])
+
+  // Refresh when opening the categories tab
+  useEffect(() => {
+    if (activeTab === 'categories' && token) {
+      fetchCategories(token, true)
+    }
+  }, [activeTab, token, fetchCategories])
 
   const handleAddCategory = async () => {
-    if (!newCatName.trim() || !token) return
+    const name = newCatName.trim()
+    if (!name) return
+    if (!token) {
+      addToast('Nicht angemeldet — bitte erneut anmelden', 'error')
+      return
+    }
     setAddingCat(true)
     try {
       const res = await fetch('/api/admin/categories', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ name: newCatName.trim() }),
+        body: JSON.stringify({ name }),
       })
       const data = await res.json()
-      if (!res.ok) { addToast(data.error || 'Fehler', 'error'); return }
-      setCatList(prev => [...prev, data].sort((a, b) => a.name.localeCompare(b.name)))
+      if (!res.ok) {
+        addToast(
+          res.status === 401 ? 'Sitzung abgelaufen — bitte erneut anmelden' : data.error || 'Fehler beim Hinzufügen',
+          'error'
+        )
+        return
+      }
+      setCatList(prev => [...prev, data].sort((a, b) => a.name.localeCompare(b.name, 'de')))
       setNewCatName('')
       addToast(`"${data.name}" hinzugefügt`, 'success')
-    } catch { addToast('Fehler beim Hinzufügen', 'error') }
-    finally { setAddingCat(false) }
+    } catch {
+      addToast('Fehler beim Hinzufügen', 'error')
+    } finally {
+      setAddingCat(false)
+    }
   }
 
   const handleSaveCategory = async (id: string) => {
-    if (!editingCatName.trim() || !token) return
+    const name = editingCatName.trim()
+    if (!name) return
+    if (!token) {
+      addToast('Nicht angemeldet — bitte erneut anmelden', 'error')
+      return
+    }
     setSavingCatId(id)
     try {
       const res = await fetch('/api/admin/categories', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ id, name: editingCatName.trim() }),
+        body: JSON.stringify({ id, name }),
       })
       const data = await res.json()
-      if (!res.ok) { addToast(data.error || 'Fehler', 'error'); return }
+      if (!res.ok) {
+        addToast(
+          res.status === 401 ? 'Sitzung abgelaufen — bitte erneut anmelden' : data.error || 'Fehler beim Speichern',
+          'error'
+        )
+        return
+      }
       setCatList(prev =>
-        prev.map(c => c.id === id ? data : c).sort((a, b) => a.name.localeCompare(b.name))
+        prev.map(c => c.id === id ? data : c).sort((a, b) => a.name.localeCompare(b.name, 'de'))
       )
       setEditingCatId(null)
       addToast('Kategorie aktualisiert', 'success')
-    } catch { addToast('Fehler beim Speichern', 'error') }
-    finally { setSavingCatId(null) }
+    } catch {
+      addToast('Fehler beim Speichern', 'error')
+    } finally {
+      setSavingCatId(null)
+    }
   }
 
   const handleDeleteCategory = async (id: string, name: string) => {
     if (!window.confirm(`Kategorie "${name}" wirklich löschen?`)) return
+    if (!token) {
+      addToast('Nicht angemeldet — bitte erneut anmelden', 'error')
+      return
+    }
     setDeletingCatId(id)
     try {
-      const res = await fetch(`/api/admin/categories?id=${id}`, {
+      const res = await fetch(`/api/admin/categories?id=${encodeURIComponent(id)}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       })
-      if (!res.ok) { const d = await res.json(); addToast(d.error || 'Fehler', 'error'); return }
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        addToast(
+          res.status === 401 ? 'Sitzung abgelaufen — bitte erneut anmelden' : data.error || 'Fehler beim Löschen',
+          'error'
+        )
+        return
+      }
       setCatList(prev => prev.filter(c => c.id !== id))
       addToast(`"${name}" gelöscht`, 'success')
-    } catch { addToast('Fehler beim Löschen', 'error') }
-    finally { setDeletingCatId(null) }
+    } catch {
+      addToast('Fehler beim Löschen', 'error')
+    } finally {
+      setDeletingCatId(null)
+    }
   }
 
   return (
@@ -481,8 +550,8 @@ export default function AdminPage() {
         </div>
       </div>
 
-      {/* Loading State */}
-      {loading ? (
+      {/* Loading State — don't block categories tab */}
+      {loading && activeTab !== 'categories' ? (
         <div className="flex items-center justify-center py-20">
           <div className="flex flex-col items-center gap-3">
             <Loader2 className="w-6 h-6 animate-spin text-emerald-600" />
@@ -523,7 +592,7 @@ export default function AdminPage() {
               { label: 'Produkte', value: stats.totalProducts, icon: Package, color: 'from-emerald-600 to-emerald-700' },
               { label: 'Aktiv', value: stats.activeProducts, icon: Layers, color: 'from-blue-500 to-indigo-500' },
               { label: 'Inaktiv', value: stats.inactiveProducts, icon: AlertTriangle, color: 'from-red-500 to-pink-500' },
-              { label: 'Kategorien', value: categories.length, icon: X, color: 'from-gray-500 to-gray-600' },
+              { label: 'Kategorien', value: catList.length, icon: X, color: 'from-gray-500 to-gray-600' },
             ].map((stat, i) => {
               const Icon = stat.icon
               return (
@@ -608,6 +677,7 @@ export default function AdminPage() {
                 className="flex-1 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600/20 focus:border-emerald-600 transition-all"
               />
               <motion.button
+                type="button"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={handleAddCategory}
@@ -670,6 +740,7 @@ export default function AdminPage() {
                             className="flex-1 px-3 py-1.5 border border-emerald-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600/20 bg-white"
                           />
                           <button
+                            type="button"
                             onClick={() => handleSaveCategory(cat.id)}
                             disabled={savingCatId === cat.id || !editingCatName.trim()}
                             className="p-1.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50 transition-colors"
@@ -680,6 +751,7 @@ export default function AdminPage() {
                               : <Check className="w-3.5 h-3.5" />}
                           </button>
                           <button
+                            type="button"
                             onClick={() => setEditingCatId(null)}
                             className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 transition-colors"
                             title="Abbrechen"
@@ -690,8 +762,9 @@ export default function AdminPage() {
                       ) : (
                         <>
                           <span className="flex-1 text-sm font-medium text-gray-800">{cat.name}</span>
-                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="flex items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                             <button
+                              type="button"
                               onClick={() => { setEditingCatId(cat.id); setEditingCatName(cat.name) }}
                               className="p-1.5 rounded-lg text-gray-400 hover:bg-blue-50 hover:text-blue-600 transition-colors"
                               title="Bearbeiten"
@@ -699,6 +772,7 @@ export default function AdminPage() {
                               <Edit3 className="w-3.5 h-3.5" />
                             </button>
                             <button
+                              type="button"
                               onClick={() => handleDeleteCategory(cat.id, cat.name)}
                               disabled={deletingCatId === cat.id}
                               className="p-1.5 rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-600 transition-colors disabled:opacity-40"
@@ -1035,47 +1109,13 @@ export default function AdminPage() {
                       className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600/20 focus:border-emerald-600 transition-all appearance-none"
                     >
                       <option value="">-- Kategorie auswählen --</option>
-                      <optgroup label="🥗 Lebensmittel">
-                        <option value="Süße Snacks">Süße Snacks</option>
-                        <option value="Salzige Snacks">Salzige Snacks</option>
-                        <option value="Lebensmittel">Lebensmittel</option>
-                        <option value="Kaugummi">Kaugummi</option>
-                        <option value="Kinderartikel">Kinderartikel</option>
-                      </optgroup>
-                      <optgroup label="🥤 Getränke">
-                        <option value="Softdrinks">Softdrinks</option>
-                        <option value="Energy Drinks">Energy Drinks</option>
-                        <option value="Eistee">Eistee</option>
-                        <option value="Saft">Saft</option>
-                        <option value="Milch">Milch</option>
-                        <option value="Wasser">Wasser</option>
-                        <option value="Bier">Bier</option>
-                        <option value="Sekt">Sekt</option>
-                        <option value="Wein">Wein</option>
-                        <option value="Spirituosen">Spirituosen</option>
-                        <option value="Getränkekisten">Getränkekisten</option>
-                      </optgroup>
-                      <optgroup label="🚬 Rauchen">
-                        <option value="Zigaretten">Zigaretten</option>
-                        <option value="Vape / E-Zigaretten">Vape / E-Zigaretten</option>
-                        <option value="Drehtabak & Zubehör">Drehtabak & Zubehör</option>
-                        <option value="Feuerzeuge & Zubehör">Feuerzeuge & Zubehör</option>
-                        <option value="Papers & Tips">Papers & Tips</option>
-                        <option value="Rauchbedarf">Rauchbedarf</option>
-                      </optgroup>
-                      <optgroup label="🪬 Shisha">
-                        <option value="Shisha / Wasserpfeife">Shisha / Wasserpfeife</option>
-                      </optgroup>
-                      <optgroup label="💨 Vape">
-                        <option value="Vape / E-Zigaretten">Vape / E-Zigaretten</option>
-                      </optgroup>
-                      <optgroup label="🍦 Eis">
-                        <option value="Eis / Speiseeis">Eis / Speiseeis</option>
-                        <option value="Eiscreme">Eiscreme</option>
-                      </optgroup>
-                      <optgroup label="🧴 Drogerie">
-                        <option value="Drogerie">Drogerie</option>
-                      </optgroup>
+                      {catList.length === 0 ? (
+                        <option value="" disabled>Keine Kategorien — bitte unter „Kategorien“ anlegen</option>
+                      ) : (
+                        catList.map((cat) => (
+                          <option key={cat.id} value={cat.name}>{cat.name}</option>
+                        ))
+                      )}
                     </select>
                   </div>
                 </div>

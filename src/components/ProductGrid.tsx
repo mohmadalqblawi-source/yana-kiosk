@@ -3,7 +3,7 @@
 import { useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { Product } from '@/types'
-import ProductCard, { cardVariants } from './ProductCard'
+import ProductCard from './ProductCard'
 import { useLanguageStore } from '@/store/language'
 import { buildCategoryLookup } from '@/lib/category-styles'
 import { PackageOpen } from 'lucide-react'
@@ -61,13 +61,12 @@ export default function ProductGrid({ products, categories = [] }: ProductGridPr
       viewport={{ once: true, margin: '-40px', amount: 0.1 }}
     >
       {products.map((product, index) => (
-        <motion.div key={product.id} variants={cardVariants} className="h-full">
-          <ProductCard
-            product={product}
-            index={index}
-            categoryLookup={categoryLookup}
-          />
-        </motion.div>
+        <ProductCard
+          key={product.id}
+          product={product}
+          index={index}
+          categoryLookup={categoryLookup}
+        />
       ))}
     </motion.div>
   )

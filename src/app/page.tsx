@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { Product, Category } from '@/types'
-import ProductCard, { cardVariants } from '@/components/ProductCard'
+import ProductCard from '@/components/ProductCard'
 import { ProductCardSkeleton } from '@/components/SkeletonLoader'
 import { useLanguageStore } from '@/store/language'
 import { buildCategoryLookup } from '@/lib/category-styles'
@@ -181,13 +181,12 @@ export default function HomePage() {
               }}
             >
               {displayProducts.slice(0, 8).map((product, index) => (
-                <motion.div key={product.id} variants={cardVariants} className="h-full">
-                  <ProductCard
-                    product={product}
-                    index={index}
-                    categoryLookup={categoryLookup}
-                  />
-                </motion.div>
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  index={index}
+                  categoryLookup={categoryLookup}
+                />
               ))}
             </motion.div>
           )}

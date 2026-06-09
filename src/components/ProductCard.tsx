@@ -164,31 +164,31 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
           </div>
 
           {/* Info */}
-          <div className="p-4">
+          <div className="p-3 sm:p-4">
             <div className="flex items-center gap-1.5 mb-1">
               <span className="text-xs">{emoji}</span>
-              <p className="text-xs font-medium text-green-600 uppercase tracking-wider">
+              <p className="text-[10px] sm:text-xs font-medium text-green-600 uppercase tracking-wider truncate">
                 {product.category}
               </p>
             </div>
-            <h3 className="font-semibold text-gray-900 group-hover:text-green-600 transition-colors line-clamp-1">
+            <h3 className="text-sm sm:text-base font-semibold text-gray-900 group-hover:text-green-600 transition-colors line-clamp-2">
               {product.name}
             </h3>
             {product.description && (
-              <p className="text-sm text-gray-500 line-clamp-2 mt-1 leading-relaxed">
+              <p className="text-xs sm:text-sm text-gray-500 line-clamp-2 mt-1 leading-relaxed hidden sm:block">
                 {product.description}
               </p>
             )}
-            <div className="flex items-center justify-between mt-3">
-              <div>
-                <span className="text-lg font-bold text-gray-900">{formatPrice(gross)}</span>
+            <div className="flex items-center justify-between mt-2 sm:mt-3 gap-2">
+              <div className="min-w-0">
+                <span className="text-base sm:text-lg font-bold text-gray-900">{formatPrice(gross)}</span>
                 <span className="text-[10px] text-gray-400 ml-1 block leading-none">{tr('inclVat')}</span>
               </div>
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={handleAddToCart}
-                className="px-3 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl text-sm font-medium hover:shadow-lg hover:shadow-green-500/20 transition-all flex items-center gap-1.5"
+                className="shrink-0 px-2.5 sm:px-3 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl text-sm font-medium hover:shadow-lg hover:shadow-green-500/20 transition-all flex items-center gap-1.5"
               >
                 <ShoppingBag className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">{tr('add')}</span>

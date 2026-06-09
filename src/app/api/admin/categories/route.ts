@@ -1,25 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/auth'
-
-async function syncCategoriesFromProducts() {
-  const existing = await prisma.category.count()
-  if (existing > 0) return
-
-  const products = await prisma.product.findMany({ select: { category: true } })
-  const names = [...new Set(products.map((p) => p.category).filter(Boolean))]
-  if (names.length === 0) return
-
-  await Promise.all(
-    names.map((name) =>
-      prisma.category.upsert({
-        where: { name },
-        update: {},
-        create: { name },
-      })
-    )
-  )
-}
+import { syncCategoriesFromProducts } from '@/lib/categories'
 
 export async function GET(request: NextRequest) {
   const admin = requireAdmin(request)

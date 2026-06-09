@@ -667,14 +667,14 @@ export default function AdminPage() {
               </div>
               Neue Kategorie hinzufügen
             </h2>
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
               <input
                 type="text"
                 value={newCatName}
                 onChange={e => setNewCatName(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') handleAddCategory() }}
-                placeholder="Kategoriename..."
-                className="flex-1 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600/20 focus:border-emerald-600 transition-all"
+                placeholder="z.B. Getränke, Snacks, Shisha..."
+                className="w-full flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600/20 focus:border-emerald-600 transition-all"
               />
               <motion.button
                 type="button"
@@ -682,7 +682,7 @@ export default function AdminPage() {
                 whileTap={{ scale: 0.98 }}
                 onClick={handleAddCategory}
                 disabled={addingCat || !newCatName.trim()}
-                className="px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-xl text-sm font-semibold flex items-center gap-2 disabled:opacity-50 hover:shadow-lg hover:shadow-emerald-600/20 transition-all"
+                className="w-full sm:w-auto shrink-0 px-5 py-3 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-xl text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50 hover:shadow-lg hover:shadow-emerald-600/20 transition-all"
               >
                 {addingCat ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
                 Hinzufügen

@@ -8,7 +8,8 @@ import ProductGrid from '@/components/ProductGrid'
 import { ProductCardSkeleton } from '@/components/SkeletonLoader'
 import { useLanguageStore } from '@/store/language'
 import { isAgeRestrictedCategory } from '@/lib/categories'
-import { Search, X, Store, ShieldAlert, Tag } from 'lucide-react'
+import { getCategoryStyle } from '@/lib/category-styles'
+import { Search, X, Store, ShieldAlert } from 'lucide-react'
 
 interface ShopCategory {
   id: string
@@ -240,12 +241,59 @@ function ShopContent() {
       </AnimatePresence>
 
       {/* Header */}
-      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mb-5 sm:mb-8">
+      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mb-5 sm:mb-6">
         <h1 className="text-2xl sm:text-4xl font-bold text-gray-900">{tr('title')}</h1>
         <p className="text-sm sm:text-base text-gray-500 mt-1">
           {filteredProducts.length} {tr('productsFound')}
         </p>
       </motion.div>
+
+      {/* Category cards — dynamic from admin, same style as before */}
+      {!loading && categories.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+          className="mb-5 sm:mb-6"
+        >
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3">
+            {categories.map((cat, index) => {
+              const style = getCategoryStyle(cat.name, index)
+              const Icon = style.icon
+              const count = categoryProductCount(cat.name)
+              const isActive = selectedCategory === cat.name
+              return (
+                <button
+                  key={cat.id}
+                  type="button"
+                  onClick={() => selectCategory(cat.name)}
+                  className={`relative flex items-center gap-2.5 sm:gap-3 px-3 sm:px-4 py-3 sm:py-3.5 rounded-2xl text-sm font-semibold transition-all border-2 text-left ${
+                    isActive
+                      ? `bg-gradient-to-br ${style.color} text-white border-transparent shadow-lg`
+                      : 'bg-white border-gray-200 text-gray-700 hover:border-gray-300 hover:shadow-sm'
+                  }`}
+                >
+                  <div
+                    className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                      isActive ? 'bg-white/20' : `bg-gradient-to-br ${style.color}`
+                    }`}
+                  >
+                    <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className={`text-xs sm:text-sm font-bold truncate ${isActive ? 'text-white' : 'text-gray-900'}`}>
+                      {cat.name}
+                    </p>
+                    <p className={`text-[10px] sm:text-xs ${isActive ? 'text-white/70' : 'text-gray-400'}`}>
+                      {count} {tr('products')}
+                    </p>
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+        </motion.div>
+      )}
 
       {/* Search */}
       <motion.div
@@ -274,55 +322,6 @@ function ShopContent() {
           )}
         </div>
       </motion.div>
-
-      {/* Dynamic categories — horizontal scroll on mobile */}
-      {!loading && categories.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.08 }}
-          className="mb-5 sm:mb-6"
-        >
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
-            <Tag className="w-3.5 h-3.5" />
-            {tr('categories')}
-          </p>
-          <div className="flex gap-2 overflow-x-auto pb-1 -mx-3 px-3 sm:mx-0 sm:px-0 sm:flex-wrap scrollbar-hide">
-            <button
-              type="button"
-              onClick={() => selectCategory('')}
-              className={`shrink-0 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-                !selectedCategory
-                  ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/20'
-                  : 'bg-white border border-gray-200 text-gray-700 hover:border-emerald-200'
-              }`}
-            >
-              {tr('alle')}
-            </button>
-            {categories.map((cat) => {
-              const count = categoryProductCount(cat.name)
-              const active = selectedCategory === cat.name
-              return (
-                <button
-                  key={cat.id}
-                  type="button"
-                  onClick={() => selectCategory(cat.name)}
-                  className={`shrink-0 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-                    active
-                      ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/20'
-                      : 'bg-white border border-gray-200 text-gray-700 hover:border-emerald-200'
-                  }`}
-                >
-                  {cat.name}
-                  <span className={`ml-1.5 text-xs font-normal ${active ? 'text-white/80' : 'text-gray-400'}`}>
-                    ({count})
-                  </span>
-                </button>
-              )
-            })}
-          </div>
-        </motion.div>
-      )}
 
       {/* Active filters */}
       {(searchQuery || selectedCategory) && (

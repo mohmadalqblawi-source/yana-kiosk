@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Product, StoreSettings } from '@/types'
 import { formatPrice, calculateVAT } from '@/lib/utils'
+import { getCategoryStyle } from '@/lib/category-styles'
 import { useUIStore } from '@/store/ui'
 import { useAdminStore } from '@/store/admin'
 import {
@@ -712,83 +713,93 @@ export default function AdminPage() {
                 <p className="text-sm">Noch keine Kategorien</p>
               </div>
             ) : (
-              <ul className="divide-y divide-gray-50">
+              <div className="p-4 sm:p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 <AnimatePresence initial={false}>
-                  {catList.map(cat => (
-                    <motion.li
-                      key={cat.id}
-                      layout
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="flex items-center gap-3 px-5 sm:px-6 py-3.5 hover:bg-gray-50/60 transition-colors group"
-                    >
-                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-50 to-emerald-100 flex items-center justify-center shrink-0">
-                        <Tag className="w-3.5 h-3.5 text-emerald-600" />
-                      </div>
+                  {catList.map((cat, index) => {
+                    const style = getCategoryStyle(cat.name, index)
+                    const Icon = style.icon
+                    const productCount = products.filter(p => p.category === cat.name).length
+                    const isEditing = editingCatId === cat.id
 
-                      {editingCatId === cat.id ? (
-                        <>
-                          <input
-                            autoFocus
-                            value={editingCatName}
-                            onChange={e => setEditingCatName(e.target.value)}
-                            onKeyDown={e => {
-                              if (e.key === 'Enter') handleSaveCategory(cat.id)
-                              if (e.key === 'Escape') setEditingCatId(null)
-                            }}
-                            className="flex-1 px-3 py-1.5 border border-emerald-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600/20 bg-white"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => handleSaveCategory(cat.id)}
-                            disabled={savingCatId === cat.id || !editingCatName.trim()}
-                            className="p-1.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50 transition-colors"
-                            title="Speichern"
-                          >
-                            {savingCatId === cat.id
-                              ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                              : <Check className="w-3.5 h-3.5" />}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setEditingCatId(null)}
-                            className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 transition-colors"
-                            title="Abbrechen"
-                          >
-                            <X className="w-3.5 h-3.5" />
-                          </button>
-                        </>
-                      ) : (
-                        <>
-                          <span className="flex-1 text-sm font-medium text-gray-800">{cat.name}</span>
-                          <div className="flex items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                    return (
+                      <motion.div
+                        key={cat.id}
+                        layout
+                        initial={{ opacity: 0, scale: 0.96 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.96 }}
+                        className="relative flex items-center gap-3 p-4 rounded-2xl border-2 border-gray-100 bg-white hover:border-emerald-100 hover:shadow-md transition-all group"
+                      >
+                        <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${style.color} flex items-center justify-center shrink-0 shadow-sm`}>
+                          <Icon className="w-5 h-5 text-white" />
+                        </div>
+
+                        {isEditing ? (
+                          <div className="flex-1 flex items-center gap-2 min-w-0">
+                            <input
+                              autoFocus
+                              value={editingCatName}
+                              onChange={e => setEditingCatName(e.target.value)}
+                              onKeyDown={e => {
+                                if (e.key === 'Enter') handleSaveCategory(cat.id)
+                                if (e.key === 'Escape') setEditingCatId(null)
+                              }}
+                              className="flex-1 min-w-0 px-3 py-2 border border-emerald-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600/20 bg-white"
+                            />
                             <button
                               type="button"
-                              onClick={() => { setEditingCatId(cat.id); setEditingCatName(cat.name) }}
-                              className="p-1.5 rounded-lg text-gray-400 hover:bg-blue-50 hover:text-blue-600 transition-colors"
-                              title="Bearbeiten"
+                              onClick={() => handleSaveCategory(cat.id)}
+                              disabled={savingCatId === cat.id || !editingCatName.trim()}
+                              className="p-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50"
                             >
-                              <Edit3 className="w-3.5 h-3.5" />
+                              {savingCatId === cat.id
+                                ? <Loader2 className="w-4 h-4 animate-spin" />
+                                : <Check className="w-4 h-4" />}
                             </button>
                             <button
                               type="button"
-                              onClick={() => handleDeleteCategory(cat.id, cat.name)}
-                              disabled={deletingCatId === cat.id}
-                              className="p-1.5 rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-600 transition-colors disabled:opacity-40"
-                              title="Löschen"
+                              onClick={() => setEditingCatId(null)}
+                              className="p-2 rounded-lg text-gray-400 hover:bg-gray-100"
                             >
-                              {deletingCatId === cat.id
-                                ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                : <Trash2 className="w-3.5 h-3.5" />}
+                              <X className="w-4 h-4" />
                             </button>
                           </div>
-                        </>
-                      )}
-                    </motion.li>
-                  ))}
+                        ) : (
+                          <>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-bold text-gray-900 truncate">{cat.name}</p>
+                              <p className="text-xs text-gray-400 mt-0.5">
+                                {productCount} {productCount === 1 ? 'Produkt' : 'Produkte'}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-1 shrink-0">
+                              <button
+                                type="button"
+                                onClick={() => { setEditingCatId(cat.id); setEditingCatName(cat.name) }}
+                                className="p-2 rounded-lg text-gray-400 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                                title="Bearbeiten"
+                              >
+                                <Edit3 className="w-4 h-4" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteCategory(cat.id, cat.name)}
+                                disabled={deletingCatId === cat.id}
+                                className="p-2 rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-600 transition-colors disabled:opacity-40"
+                                title="Löschen"
+                              >
+                                {deletingCatId === cat.id
+                                  ? <Loader2 className="w-4 h-4 animate-spin" />
+                                  : <Trash2 className="w-4 h-4" />}
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </motion.div>
+                    )
+                  })}
                 </AnimatePresence>
-              </ul>
+              </div>
             )}
           </div>
         </motion.div>

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { Product, Category } from '@/types'
-import ProductCard from '@/components/ProductCard'
+import ProductCard, { cardVariants } from '@/components/ProductCard'
 import { ProductCardSkeleton } from '@/components/SkeletonLoader'
 import { useLanguageStore } from '@/store/language'
 import { buildCategoryLookup } from '@/lib/category-styles'
@@ -170,16 +170,26 @@ export default function HomePage() {
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
+            <motion.div
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch"
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: '-40px' }}
+              variants={{
+                hidden: {},
+                visible: { transition: { staggerChildren: 0.08, delayChildren: 0.05 } },
+              }}
+            >
               {displayProducts.slice(0, 8).map((product, index) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  index={index}
-                  categoryLookup={categoryLookup}
-                />
+                <motion.div key={product.id} variants={cardVariants} className="h-full">
+                  <ProductCard
+                    product={product}
+                    index={index}
+                    categoryLookup={categoryLookup}
+                  />
+                </motion.div>
               ))}
-            </div>
+            </motion.div>
           )}
 
           <div className="mt-8 text-center sm:hidden">

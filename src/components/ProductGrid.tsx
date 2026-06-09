@@ -1,8 +1,9 @@
 'use client'
 
 import { useMemo } from 'react'
+import { motion } from 'framer-motion'
 import { Product } from '@/types'
-import ProductCard from './ProductCard'
+import ProductCard, { cardVariants } from './ProductCard'
 import { useLanguageStore } from '@/store/language'
 import { buildCategoryLookup } from '@/lib/category-styles'
 import { PackageOpen } from 'lucide-react'
@@ -10,6 +11,13 @@ import { PackageOpen } from 'lucide-react'
 const inlineTranslations = {
   noProducts: { de: 'Keine Produkte gefunden', en: 'No products found', fa: 'محصولی یافت نشد', ar: 'لم يتم العثور على منتجات' },
   tryAdjusting: { de: 'Versuchen Sie Ihre Suche oder Filter anzupassen', en: 'Try adjusting your search or filter criteria', fa: 'معیارهای جستجو یا فیلتر خود را تنظیم کنید', ar: 'حاول تعديل معايير البحث أو التصفية' },
+}
+
+const gridVariants = {
+  hidden: {},
+  visible: {
+    transition: { staggerChildren: 0.07, delayChildren: 0.05 },
+  },
 }
 
 interface ProductGridProps {
@@ -45,15 +53,22 @@ export default function ProductGrid({ products, categories = [] }: ProductGridPr
   }
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-5 lg:gap-6 items-stretch">
+    <motion.div
+      className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-5 lg:gap-6 items-stretch"
+      variants={gridVariants}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, margin: '-40px', amount: 0.1 }}
+    >
       {products.map((product, index) => (
-        <ProductCard
-          key={product.id}
-          product={product}
-          index={index}
-          categoryLookup={categoryLookup}
-        />
+        <motion.div key={product.id} variants={cardVariants} className="h-full">
+          <ProductCard
+            product={product}
+            index={index}
+            categoryLookup={categoryLookup}
+          />
+        </motion.div>
       ))}
-    </div>
+    </motion.div>
   )
 }

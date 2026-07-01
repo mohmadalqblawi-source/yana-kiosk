@@ -11,6 +11,8 @@ import {
   DEFAULT_COLOR_KEY,
   getCategoryIconLabel,
   getCategoryColorLabel,
+  ADMIN_CATEGORY_PRESETS,
+  type AdminCategoryPreset,
 } from '@/lib/category-styles'
 import CategoryStylePicker from '@/components/CategoryStylePicker'
 import { useUIStore } from '@/store/ui'
@@ -76,6 +78,7 @@ export default function AdminPage() {
   const [catFormIcon, setCatFormIcon] = useState(DEFAULT_ICON_KEY)
   const [catFormColor, setCatFormColor] = useState(DEFAULT_COLOR_KEY)
   const [savingCat, setSavingCat] = useState(false)
+  const [quickAddingPreset, setQuickAddingPreset] = useState<string | null>(null)
   const [deletingCatId, setDeletingCatId] = useState<string | null>(null)
   const [storeSettings, setStoreSettings] = useState<StoreSettings | null>(null)
   const [settingsLoading, setSettingsLoading] = useState(true)
@@ -386,6 +389,67 @@ export default function AdminPage() {
   const closeCategoryModal = () => {
     setShowCatModal(false)
     setCatFormId(null)
+  }
+
+  const CATEGORY_PRESET_GROUPS: { title: string; names: string[] }[] = [
+    {
+      title: 'Süßes & Snacks',
+      names: ['Schokolade', 'Chips', 'Süße Snacks', 'Salzige Snacks'],
+    },
+    {
+      title: 'Getränke',
+      names: ['Softdrinks', 'Energy Drinks', 'Wein', 'Saft', 'Eistea', 'Sekt', 'Spirituosen'],
+    },
+    {
+      title: 'Tabak & Shisha',
+      names: ['Zigaretten', 'Rauchbedarf', 'Shishakohle'],
+    },
+  ]
+
+  const getPresetByName = (name: string): AdminCategoryPreset | undefined =>
+    ADMIN_CATEGORY_PRESETS.find((p) => p.name === name)
+
+  const openPresetInModal = (preset: AdminCategoryPreset) => {
+    setCatModalMode('add')
+    setCatFormId(null)
+    setCatFormName(preset.name)
+    setCatFormIcon(preset.icon)
+    setCatFormColor(preset.color)
+    setShowCatModal(true)
+  }
+
+  const quickAddPreset = async (preset: AdminCategoryPreset) => {
+    if (!token) {
+      addToast('Nicht angemeldet — bitte erneut anmelden', 'error')
+      return
+    }
+    const existing = catList.find((c) => c.name === preset.name)
+    if (existing) {
+      openEditCategoryModal({ ...existing, icon: preset.icon, color: preset.color })
+      return
+    }
+    setQuickAddingPreset(preset.name)
+    try {
+      const res = await fetch('/api/admin/categories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ name: preset.name, icon: preset.icon, color: preset.color }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        addToast(
+          res.status === 401 ? 'Sitzung abgelaufen — bitte erneut anmelden' : data.error || 'Fehler beim Hinzufügen',
+          'error'
+        )
+        return
+      }
+      setCatList((prev) => [...prev, data].sort((a, b) => a.name.localeCompare(b.name, 'de')))
+      addToast(`"${preset.name}" mit Icon hinzugefügt`, 'success')
+    } catch {
+      addToast('Fehler beim Hinzufügen', 'error')
+    } finally {
+      setQuickAddingPreset(null)
+    }
   }
 
   const handleSaveCategoryModal = async () => {
@@ -717,6 +781,64 @@ export default function AdminPage() {
               <Plus className="w-4 h-4" />
               Neue Kategorie
             </motion.button>
+          </div>
+
+          {/* Category presets with icons — quick add */}
+          <div className="bg-white rounded-2xl border border-gray-100 p-5 sm:p-6 shadow-sm space-y-5">
+            <div>
+              <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                <Tag className="w-4 h-4 text-emerald-600" />
+                Kategorien mit Icon — Schnell hinzufügen
+              </h3>
+              <p className="text-xs text-gray-500 mt-1">
+                Tippe auf eine Kategorie — wird mit passendem Icon und Farbe angelegt. Bereits vorhandene öffnen zum Bearbeiten.
+              </p>
+            </div>
+            {CATEGORY_PRESET_GROUPS.map((group) => (
+              <div key={group.title}>
+                <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2.5">
+                  {group.title}
+                </p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+                  {group.names.map((presetName) => {
+                    const preset = getPresetByName(presetName)
+                    if (!preset) return null
+                    const style = resolveCategoryStyle({ name: preset.name, icon: preset.icon, color: preset.color })
+                    const Icon = style.icon
+                    const exists = catList.some((c) => c.name === preset.name)
+                    const loading = quickAddingPreset === preset.name
+                    return (
+                      <button
+                        key={preset.name}
+                        type="button"
+                        disabled={loading || !!quickAddingPreset}
+                        onClick={() => quickAddPreset(preset)}
+                        className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl border-2 text-left transition-all disabled:opacity-60 ${
+                          exists
+                            ? 'border-emerald-200 bg-emerald-50/60'
+                            : 'border-gray-100 bg-gray-50/50 hover:border-emerald-300 hover:bg-white hover:shadow-sm'
+                        }`}
+                      >
+                        <div className={`w-9 h-9 rounded-lg bg-gradient-to-br ${style.color} flex items-center justify-center shrink-0 shadow-sm`}>
+                          {loading ? (
+                            <Loader2 className="w-4 h-4 text-white animate-spin" />
+                          ) : (
+                            <Icon className="w-4 h-4 text-white" />
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-bold text-gray-900 truncate leading-tight">{preset.name}</p>
+                          <p className="text-[10px] text-gray-400 truncate">
+                            {exists ? 'Bearbeiten' : 'Hinzufügen'}
+                          </p>
+                        </div>
+                        {exists && !loading && <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            ))}
           </div>
 
           {/* Category list */}

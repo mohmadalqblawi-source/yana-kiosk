@@ -16,6 +16,16 @@ import {
   Tag,
   Zap,
   Flame,
+  CakeSlice,
+  Popcorn,
+  CupSoda,
+  Citrus,
+  Package,
+  FlameKindling,
+  BottleWine,
+  Martini,
+  CloudFog,
+  PillBottle,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -45,6 +55,16 @@ export const CATEGORY_ICONS: Record<string, LucideIcon> = {
   tag: Tag,
   zap: Zap,
   flame: Flame,
+  'cake-slice': CakeSlice,
+  popcorn: Popcorn,
+  'cup-soda': CupSoda,
+  citrus: Citrus,
+  package: Package,
+  'flame-kindling': FlameKindling,
+  'bottle-wine': BottleWine,
+  martini: Martini,
+  'cloud-fog': CloudFog,
+  'pill-bottle': PillBottle,
 }
 
 export const CATEGORY_ICON_OPTIONS = Object.keys(CATEGORY_ICONS) as (keyof typeof CATEGORY_ICONS)[]
@@ -72,10 +92,10 @@ export const CATEGORY_COLOR_OPTIONS = Object.keys(CATEGORY_COLORS)
 export const CATEGORY_ICON_LABELS: Record<string, string> = {
   'shopping-bag': 'Tasche',
   utensils: 'Essen',
-  wine: 'Getränke',
-  cigarette: 'Tabak',
-  pill: 'Drogerie',
-  snowflake: 'Eis',
+  wine: 'Wein',
+  cigarette: 'Zigaretten',
+  pill: 'Medizin',
+  snowflake: 'Eistee',
   droplets: 'Wasser',
   candy: 'Süßes',
   cookie: 'Snacks',
@@ -86,7 +106,17 @@ export const CATEGORY_ICON_LABELS: Record<string, string> = {
   pizza: 'Pizza',
   tag: 'Sonstiges',
   zap: 'Energy',
-  flame: 'Kohle',
+  flame: 'Feuer',
+  'cake-slice': 'Schokolade',
+  popcorn: 'Chips',
+  'cup-soda': 'Softdrinks',
+  citrus: 'Saft',
+  package: 'Rauchbedarf',
+  'flame-kindling': 'Shishakohle',
+  'bottle-wine': 'Sekt',
+  martini: 'Spirituosen',
+  'cloud-fog': 'Vapes',
+  'pill-bottle': 'Drogerie',
 }
 
 export const CATEGORY_COLOR_LABELS: Record<string, string> = {
@@ -115,22 +145,24 @@ export function getCategoryColorLabel(key: string): string {
   return CATEGORY_COLOR_LABELS[key] ?? key
 }
 
-/** Kiosk category presets — icons in admin quick-add. */
+/** Kiosk category presets — unique verified lucide icons per category. */
 export const ADMIN_CATEGORY_PRESETS = [
-  { name: 'Schokolade', icon: 'candy', color: 'rose' },
-  { name: 'Chips', icon: 'cookie', color: 'orange' },
-  { name: 'Softdrinks', icon: 'sparkles', color: 'cyan' },
+  { name: 'Schokolade', icon: 'cake-slice', color: 'rose' },
+  { name: 'Chips', icon: 'popcorn', color: 'orange' },
+  { name: 'Softdrinks', icon: 'cup-soda', color: 'cyan' },
   { name: 'Energy Drinks', icon: 'zap', color: 'yellow' },
   { name: 'Wein', icon: 'wine', color: 'purple' },
-  { name: 'Saft', icon: 'apple', color: 'orange' },
+  { name: 'Saft', icon: 'citrus', color: 'orange' },
   { name: 'Eistea', icon: 'snowflake', color: 'sky' },
   { name: 'Zigaretten', icon: 'cigarette', color: 'red' },
-  { name: 'Rauchbedarf', icon: 'cigarette', color: 'gray' },
-  { name: 'Shishakohle', icon: 'flame', color: 'amber' },
-  { name: 'Sekt', icon: 'wine', color: 'yellow' },
-  { name: 'Spirituosen', icon: 'wine', color: 'indigo' },
+  { name: 'Rauchbedarf', icon: 'package', color: 'gray' },
+  { name: 'Shishakohle', icon: 'flame-kindling', color: 'amber' },
+  { name: 'Sekt', icon: 'bottle-wine', color: 'yellow' },
+  { name: 'Spirituosen', icon: 'martini', color: 'indigo' },
+  { name: 'Vapes', icon: 'cloud-fog', color: 'teal' },
+  { name: 'Drogerie', icon: 'pill-bottle', color: 'purple' },
   { name: 'Süße Snacks', icon: 'candy', color: 'emerald' },
-  { name: 'Salzige Snacks', icon: 'cookie', color: 'orange' },
+  { name: 'Salzige Snacks', icon: 'cookie', color: 'amber' },
 ] as const
 
 export type AdminCategoryPreset = (typeof ADMIN_CATEGORY_PRESETS)[number]
@@ -160,52 +192,58 @@ export function suggestCategoryKeys(name: string): { icon: string; color: string
   if (preset) return { icon: preset.icon, color: preset.color }
 
   if (/salzige\s*snack/.test(c) || (c.includes('salzig') && c.includes('snack'))) {
-    return { icon: 'cookie', color: 'orange' }
+    return { icon: 'cookie', color: 'amber' }
   }
   if (/susse\s*snack|süße\s*snack/.test(c) || (c.includes('susse') && c.includes('snack'))) {
     return { icon: 'candy', color: 'emerald' }
   }
   if (/schokolade|praline|nougat/.test(c)) {
-    return { icon: 'candy', color: 'rose' }
+    return { icon: 'cake-slice', color: 'rose' }
   }
-  if (/chip|crisp|salzige/.test(c)) {
-    return { icon: 'cookie', color: 'orange' }
+  if (/chip|crisp/.test(c)) {
+    return { icon: 'popcorn', color: 'orange' }
   }
   if (/energy|energydrink/.test(c)) {
     return { icon: 'zap', color: 'yellow' }
   }
   if (/softdrink|soft\s*drink|cola|limo|fanta|sprite/.test(c)) {
-    return { icon: 'sparkles', color: 'cyan' }
+    return { icon: 'cup-soda', color: 'cyan' }
   }
   if (/eistee|eistea|ice\s*tea/.test(c)) {
     return { icon: 'snowflake', color: 'sky' }
   }
   if (/spirituosen|schnaps|vodka|whisky|rum/.test(c)) {
-    return { icon: 'wine', color: 'indigo' }
+    return { icon: 'martini', color: 'indigo' }
   }
   if (/sekt|prosecco|champagner/.test(c)) {
-    return { icon: 'wine', color: 'yellow' }
+    return { icon: 'bottle-wine', color: 'yellow' }
   }
   if (/wein/.test(c)) {
     return { icon: 'wine', color: 'purple' }
   }
   if (/saft|nektar/.test(c)) {
-    return { icon: 'apple', color: 'orange' }
+    return { icon: 'citrus', color: 'orange' }
   }
   if (/shishakohle|kohle/.test(c)) {
-    return { icon: 'flame', color: 'amber' }
+    return { icon: 'flame-kindling', color: 'amber' }
   }
   if (/rauchbedarf|tabak|drehtabak|papers|feuerzeug/.test(c)) {
-    return { icon: 'cigarette', color: 'gray' }
+    return { icon: 'package', color: 'gray' }
+  }
+  if (/vape|e-zigarette|nikotin/.test(c)) {
+    return { icon: 'cloud-fog', color: 'teal' }
   }
   if (/zigarette/.test(c)) {
     return { icon: 'cigarette', color: 'red' }
+  }
+  if (/drogerie/.test(c)) {
+    return { icon: 'pill-bottle', color: 'purple' }
   }
   if (/snack|bonbon|gummi/.test(c)) {
     return { icon: 'candy', color: 'emerald' }
   }
   if (/getränk|getranke|drink|milch|kasten/.test(c)) {
-    return { icon: 'wine', color: 'blue' }
+    return { icon: 'cup-soda', color: 'blue' }
   }
   if (/wasser/.test(c)) {
     return { icon: 'droplets', color: 'cyan' }
@@ -217,19 +255,13 @@ export function suggestCategoryKeys(name: string): { icon: string; color: string
     return { icon: 'coffee', color: 'amber' }
   }
   if (/shisha|wasserpfeife/.test(c)) {
-    return { icon: 'cigarette', color: 'amber' }
-  }
-  if (/vape|e-zigarette|nikotin/.test(c)) {
-    return { icon: 'cigarette', color: 'cyan' }
+    return { icon: 'flame-kindling', color: 'amber' }
   }
   if (/rauch/.test(c)) {
     return { icon: 'cigarette', color: 'red' }
   }
   if (/eis|speiseeis|eiscreme/.test(c)) {
     return { icon: 'snowflake', color: 'sky' }
-  }
-  if (/drogerie/.test(c)) {
-    return { icon: 'pill', color: 'purple' }
   }
   if (/lebensmittel|essen|kaugummi|kinder|pizza/.test(c)) {
     return { icon: 'utensils', color: 'emerald' }
@@ -263,7 +295,7 @@ export function resolveProductCategoryStyle(
 /** Resolve icon component + gradient from stored keys (with name-based fallback). */
 export function resolveCategoryStyle(
   cat: { name: string; icon?: string | null; color?: string | null },
-  index = 0
+  _index = 0
 ): CategoryStyle {
   const suggested = suggestCategoryKeys(cat.name)
   const hasCustomIcon = Boolean(cat.icon && isValidIconKey(cat.icon) && cat.icon !== DEFAULT_ICON_KEY)
@@ -271,8 +303,13 @@ export function resolveCategoryStyle(
   const iconKey = hasCustomIcon ? cat.icon! : suggested.icon
   const colorKey = hasCustomColor ? cat.color! : suggested.color
 
+  const icon = CATEGORY_ICONS[iconKey]
+  if (!icon) {
+    console.warn(`[category-styles] Unknown icon key "${iconKey}" for "${cat.name}", using shopping-bag`)
+  }
+
   return {
-    icon: CATEGORY_ICONS[iconKey] ?? ShoppingBag,
+    icon: icon ?? ShoppingBag,
     color: CATEGORY_COLORS[colorKey] ?? CATEGORY_COLORS.emerald,
   }
 }

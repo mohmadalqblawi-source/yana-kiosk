@@ -402,7 +402,11 @@ export default function AdminPage() {
     },
     {
       title: 'Tabak & Shisha',
-      names: ['Zigaretten', 'Rauchbedarf', 'Shishakohle'],
+      names: ['Zigaretten', 'Rauchbedarf', 'Shishakohle', 'Vapes'],
+    },
+    {
+      title: 'Drogerie',
+      names: ['Drogerie'],
     },
   ]
 
